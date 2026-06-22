@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      initialization-fail-timeout: -1
+  sql:
+    init:
+      mode: never
+
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.loahub
+  configuration:
+    map-underscore-to-camel-case: true
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 86400000
+
+lostark:
+  api-key: ${LOSTARK_API_KEY:}
+
+discord:
+  client-id: ${DISCORD_CLIENT_ID:}
+  client-secret: ${DISCORD_CLIENT_SECRET:}
+  redirect-uri: ${DISCORD_REDIRECT_URI:http://localhost:8080/api/auth/discord/callback}
