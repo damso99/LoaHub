@@ -12,6 +12,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -59,5 +60,15 @@ public class GlobalExceptionHandler {
         payload.put("detail", exception.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiResponse<>(false, "서버 오류가 발생했습니다.", payload));
+    }
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleResponseStatus(ResponseStatusException exception) {
+        String message = exception.getReason();
+        if (message == null || message.isBlank()) {
+            message = "요청을 처리할 수 없습니다.";
+        }
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("detail", message);
+        return ResponseEntity.status(exception.getStatusCode()).body(new ApiResponse<>(false, message, payload));
     }
 }

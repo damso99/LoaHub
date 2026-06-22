@@ -10,8 +10,8 @@ import {
 } from '../data/mockData';
 import { readStorage } from '../utils/storage';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
-const useMock = String(import.meta.env.VITE_USE_MOCK_API ?? 'true') === 'true';
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8080' : '');
+const useMock = import.meta.env.DEV && String(import.meta.env.VITE_USE_MOCK_API ?? 'true') === 'true';
 
 export const apiClient = axios.create({
   baseURL,
@@ -32,6 +32,12 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 
 export const api = {
   async searchCharacters(name) {
+    if (!useMock) {
+      const encodedName = encodeURIComponent(String(name ?? '').trim());
+      const { data } = await apiClient.get(`/api/characters/search?characterName=${encodedName}`);
+      return data;
+    }
+
     if (!useMock) {
       try {
         const { data } = await apiClient.get('/api/characters/search', { params: { name } });

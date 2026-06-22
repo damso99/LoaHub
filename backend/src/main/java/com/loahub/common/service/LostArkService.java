@@ -12,10 +12,14 @@ import java.util.Map;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriUtils;
 
 @Service
 public class LostArkService {
@@ -29,31 +33,43 @@ public class LostArkService {
     }
 
     public List<Map<String, Object>> searchCharacters(String name) {
+        String normalizedName = name == null ? "" : name.trim();
+        if (normalizedName.isBlank()) {
+            throw new IllegalArgumentException("캐릭터명이 비어 있습니다.");
+        }
+
         if (apiKey.isBlank()) {
-            return toSearchCards(dao.searchCharacters(name));
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "로스트아크 API 키가 설정되지 않았습니다.");
         }
 
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("authorization", apiKey);
-            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            headers.set("accept", MediaType.APPLICATION_JSON_VALUE);
+            headers.setBearerAuth(apiKey);
 
-            String encodedName = URLEncoder.encode(name == null ? "" : name.trim(), StandardCharsets.UTF_8);
+            String encodedName = UriUtils.encodePathSegment(normalizedName, StandardCharsets.UTF_8);
             ResponseEntity<Map> response = restTemplate.exchange(
-                baseUrl + "/armories/characters/" + encodedName,
+                baseUrl + "/armories/characters/" + encodedName + "/profiles",
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 Map.class
             );
 
-            if (response.getBody() == null) {
-                return toSearchCards(dao.searchCharacters(name));
+            if (response.getBody() == null || response.getBody().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
             }
 
             return List.of(toSearchCard(response.getBody()));
+        } catch (HttpClientErrorException.NotFound exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
+        } catch (HttpClientErrorException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
+        } catch (ResponseStatusException exception) {
+            throw exception;
         } catch (Exception exception) {
-            return toSearchCards(dao.searchCharacters(name));
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
         }
+
     }
 
     private List<Map<String, Object>> toSearchCards(List<Character> characters) {
@@ -71,13 +87,16 @@ public class LostArkService {
     }
 
     private Map<String, Object> toSearchCard(Map<String, Object> source) {
+        String characterClassName = stringValue(source, "CharacterClassName", "characterClass", "className");
+        double itemAvgLevel = doubleValue(source, "ItemAvgLevel", "itemLevel");
         Map<String, Object> card = new LinkedHashMap<>();
         card.put("characterName", stringValue(source, "CharacterName", "characterName", "name"));
         card.put("serverName", stringValue(source, "ServerName", "serverName"));
-        card.put("characterClass", stringValue(source, "CharacterClassName", "characterClass", "className"));
-        card.put("itemLevel", doubleValue(source, "ItemAvgLevel", "itemLevel"));
+        card.put("characterClassName", characterClassName);
+        card.put("itemAvgLevel", itemAvgLevel);
         card.put("characterImage", stringValue(source, "CharacterImage", "characterImage"));
-        card.put("rosterLevel", doubleValue(source, "CharacterLevel", "rosterLevel"));
+        card.put("characterClass", characterClassName);
+        card.put("itemLevel", itemAvgLevel);
         card.put("isMain", false);
         return card;
     }

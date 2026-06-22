@@ -25,8 +25,8 @@ public class CharacterController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Object>> search(@RequestParam(required = false) String name) {
-        return ResponseEntity.ok(characterService.search(name));
+    public ResponseEntity<ApiResponse<Object>> search(@RequestParam(required = false, name = "characterName") String characterName) {
+        return ResponseEntity.ok(characterService.search(characterName));
     }
 
     @GetMapping("/me")
@@ -44,4 +44,3 @@ public class CharacterController {
         return ResponseEntity.ok(characterService.delete(id));
     }
 }
-
