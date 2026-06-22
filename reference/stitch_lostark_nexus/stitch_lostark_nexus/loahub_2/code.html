@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LoaHub 대시보드</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Geist:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "background": "#0e1320",
+                      "error-container": "#93000a",
+                      "primary-fixed-dim": "#a0c9ff",
+                      "on-background": "#dee2f5",
+                      "tertiary-fixed-dim": "#f9bd22",
+                      "surface-dim": "#0e1320",
+                      "on-primary-container": "#00487e",
+                      "on-primary-fixed": "#001c37",
+                      "on-surface": "#dee2f5",
+                      "primary": "#b2d2ff",
+                      "on-secondary": "#002e6a",
+                      "tertiary": "#ffc847",
+                      "surface-tint": "#a0c9ff",
+                      "on-tertiary-fixed-variant": "#5c4300",
+                      "on-tertiary": "#402d00",
+                      "surface-container-low": "#161b29",
+                      "secondary": "#aec6ff",
+                      "on-tertiary-fixed": "#261a00",
+                      "secondary-container": "#0061d1",
+                      "surface-bright": "#343947",
+                      "on-secondary-fixed": "#001a42",
+                      "on-secondary-fixed-variant": "#004395",
+                      "on-secondary-container": "#dbe4ff",
+                      "outline-variant": "#414750",
+                      "inverse-on-surface": "#2b303e",
+                      "surface-container-highest": "#303443",
+                      "on-surface-variant": "#c1c7d2",
+                      "on-primary-fixed-variant": "#00497f",
+                      "surface": "#0e1320",
+                      "primary-container": "#7cb8ff",
+                      "on-error-container": "#ffdad6",
+                      "on-primary": "#00325a",
+                      "error": "#ffb4ab",
+                      "surface-container-lowest": "#090e1b",
+                      "on-tertiary-container": "#5b4200",
+                      "tertiary-fixed": "#ffdf9f",
+                      "surface-container-high": "#252a38",
+                      "inverse-surface": "#dee2f5",
+                      "outline": "#8b919b",
+                      "surface-variant": "#303443",
+                      "on-error": "#690005",
+                      "tertiary-container": "#e5ab00",
+                      "surface-container": "#1a1f2d",
+                      "secondary-fixed": "#d8e2ff",
+                      "inverse-primary": "#1461a2",
+                      "primary-fixed": "#d2e4ff",
+                      "secondary-fixed-dim": "#aec6ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack_sm": "8px",
+                      "stack_lg": "24px",
+                      "mobile_min_width": "360px",
+                      "margin_desktop": "40px",
+                      "container_max_width": "1440px",
+                      "margin_mobile": "16px",
+                      "gutter": "24px",
+                      "stack_md": "16px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Pretendard", "Inter", "sans-serif"
+                      ],
+                      "headline-lg": [
+                              "Pretendard", "Inter", "sans-serif"
+                      ],
+                      "label-sm": [
+                              "Pretendard", "Geist", "sans-serif"
+                      ],
+                      "headline-md": [
+                              "Pretendard", "Inter", "sans-serif"
+                      ],
+                      "body-lg": [
+                              "Pretendard", "Inter", "sans-serif"
+                      ],
+                      "display-lg": [
+                              "Pretendard", "Inter", "sans-serif"
+                      ],
+                      "label-md": [
+                              "Pretendard", "Geist", "sans-serif"
+                      ],
+                      "body-md": [
+                              "Pretendard", "Inter", "sans-serif"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .glass-panel {
+            background: rgba(26, 31, 45, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .neon-glow:hover {
+            box-shadow: 0 0 20px rgba(178, 210, 255, 0.4);
+            border-color: rgba(178, 210, 255, 0.5);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(178, 210, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen pt-16 lg:pt-0 lg:pl-64">
+<!-- TopNavBar (Mobile Only) -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin_mobile h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shadow-sm lg:hidden">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">LoaHub</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary dark:text-primary hover:text-primary transition-colors duration-200" data-icon="search">search</span>
+<span class="material-symbols-outlined text-primary dark:text-primary hover:text-primary transition-colors duration-200" data-icon="mail">mail</span>
+<span class="text-primary dark:text-primary font-body-md text-body-md hover:text-primary transition-colors duration-200">로그인</span>
+</div>
+</nav>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 p-stack_md bg-surface-container-low dark:bg-surface-container-low border-r border-outline-variant/10 z-40">
+<div class="font-headline-md text-headline-md font-black text-primary mb-8 px-4 text-glow">LoaHub</div>
+<div class="mb-8 px-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-bright overflow-hidden border border-outline-variant/30 relative">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A striking digital portrait of an elite fantasy game character. The character is a heavily armored warrior with glowing neon blue eyes, set against a deep-space navy background. The lighting is high-key and cinematic, emphasizing the intricate details of the high-end gaming aesthetic. The mood is authoritative and legendary." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa40mcs_ZnueYJjTpHFwAy7ukRG2HzdmYhzQxFywvnK2-MSjAtq2MtWX7fM-KzXQW1FAqv63MlTveVWH6nc-nfJNrifEGxcRghIayaHw3B0kkcbmsqZtWJFwonAyMDpAuHTCJiLQgveZ-zdfSqqIFecwiounuri8rF9NAnc43y4ayVSPFX98WbfrpST3qggDYsnfJwSpY6fxLvvgiJwUYcZ_1mtpgQKvT8oPyVtVPLHCpVHJyOr9CQO7ugEZYGtNUajGvK-Z7jcTQ"/>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-primary">수호자 슬레이어</div>
+<div class="font-label-md text-label-md text-on-surface-variant">아이템 레벨 1620</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-primary bg-secondary-container/20 rounded-lg font-bold translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md">홈</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="swords">swords</span>
+<span class="font-label-md text-label-md">직업</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="diamond">diamond</span>
+<span class="font-label-md text-label-md">레이드</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="font-label-md text-label-md">거래소</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md">가이드</span>
+</a>
+</nav>
+<button class="w-full py-2 mb-4 rounded-full bg-gradient-to-r from-primary-container to-secondary-container text-on-primary-container font-label-md text-label-md font-bold hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] transition-all">
+            캐릭터 변경
+        </button>
+<div class="mt-auto space-y-2 border-t border-outline-variant/10 pt-4">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">설정</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md">고객센터</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Container -->
+<main class="max-w-[1440px] mx-auto p-margin_mobile md:p-gutter lg:p-margin_desktop min-h-screen">
+<!-- Search & Action Bar (Desktop) -->
+<header class="hidden lg:flex justify-between items-center mb-stack_lg pb-stack_md border-b border-outline-variant/10">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-full py-2 pl-10 pr-4 text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all text-on-surface placeholder:text-outline-variant" placeholder="가이드, 빌드, 아이템 검색..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full bg-surface-container-low hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="mail">mail</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Center Column (Main Feed) - Spans 8 cols on desktop -->
+<div class="md:col-span-12 xl:col-span-8 flex flex-col gap-stack_lg">
+<!-- Trending Carousel Hero -->
+<section class="relative h-80 rounded-xl overflow-hidden group cursor-pointer shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-white/5">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface/50 to-transparent z-10"></div>
+<img alt="Epic Raid Boss Fight" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A cinematic depiction of an epic boss fight in a high-fantasy MMORPG setting. The scene features a colossal, shadowy demonic entity looming over a glowing neon-blue landscape. Deep-space navy skies are punctuated by vibrant, ethereal energy blasts. The mood is intense, legendary, and highly coordinated, fitting a premium gaming dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGl4I0ebZhqe7RF33L_2kDF8DkMDGAThOiwyVfTMB_2CnqVlzquYNUsbTcYUv9fWqKfgJZtIhSacWfCGwhYyZeiUguH7BA7GZVbu91EgsouKm4dAvU4072_874Emt4ffGgfo_kYAy1oeWqy_cxM8xZUtcjj1WmyPYVTkVdlyHO60fceyHuCQ0ID62BG1HaxWKLw2PHqLEI6eP-9PBfZTlsRBenxYc6o0tC6J6rzfPi4-Vz_5O3RCDqW2Sgv3nUf6wFdeXuklkmBMw"/>
+<div class="absolute bottom-0 left-0 w-full p-stack_md z-20">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-1 rounded-full bg-error text-white font-label-sm text-label-sm uppercase tracking-wider">인기</span>
+<span class="font-label-md text-label-md text-primary">레이드 가이드</span>
+</div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2 text-glow">카멘 군단장 - 4관문 분석</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl hidden md:block">격돌 기믹을 마스터하고 어둠에서 살아남으세요. 최종 페이즈를 위한 종합 공략입니다.</p>
+</div>
+</section>
+<!-- Latest Posts Stream -->
+<section class="flex flex-col gap-stack_md">
+<div class="flex justify-between items-end mb-2 border-b border-outline-variant/10 pb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">최신 게시글</h3>
+<a class="font-label-md text-label-md text-primary hover:text-primary-container transition-colors" href="#">전체 보기</a>
+</div>
+<!-- Post Card 1 -->
+<article class="glass-panel p-stack_md rounded-xl neon-glow transition-all cursor-pointer flex gap-stack_md hover:bg-surface-variant/30">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-1 rounded-full bg-secondary-container text-on-primary-container font-label-sm text-label-sm uppercase">빌드</span>
+<span class="font-label-md text-label-md text-outline-variant">2시간 전</span>
+</div>
+<h4 class="font-body-lg text-body-lg text-on-surface font-semibold mb-1">현재 티어 포식자 슬레이어 최적화</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-3">신속과 치명 스탯 분배 및 최신 밸런스 패치 이후의 최적 각인 세팅에 대해 논의해봅시다.</p>
+<div class="flex items-center gap-4 text-outline font-label-md text-label-md">
+<div class="flex items-center gap-1 hover:text-primary"><span class="material-symbols-outlined text-[16px]" data-icon="thumb_up">thumb_up</span> 142</div>
+<div class="flex items-center gap-1 hover:text-primary"><span class="material-symbols-outlined text-[16px]" data-icon="chat_bubble">chat_bubble</span> 38</div>
+</div>
+</div>
+</article>
+<!-- Post Card 2 -->
+<article class="glass-panel p-stack_md rounded-xl neon-glow transition-all cursor-pointer flex gap-stack_md hover:bg-surface-variant/30">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-1 rounded-full bg-[#1b5e20] text-[#a5d6a7] font-label-sm text-label-sm uppercase">모집</span>
+<span class="font-label-md text-label-md text-outline-variant">5시간 전</span>
+</div>
+<h4 class="font-body-lg text-body-lg text-on-surface font-semibold mb-1">[카마인] 볼다이크 하드 고정팟 서폿 1명 구함</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-3">매주 수/목 오후 8시 함께하실 든든한 서포터 모십니다. 디스코드 및 브리핑 필수입니다.</p>
+<div class="flex items-center gap-4 text-outline font-label-md text-label-md">
+<div class="flex items-center gap-1 hover:text-primary"><span class="material-symbols-outlined text-[16px]" data-icon="thumb_up">thumb_up</span> 12</div>
+<div class="flex items-center gap-1 hover:text-primary"><span class="material-symbols-outlined text-[16px]" data-icon="chat_bubble">chat_bubble</span> 5</div>
+</div>
+</div>
+</article>
+</section>
+</div>
+<!-- Right Column (Information) - Spans 4 cols on desktop -->
+<aside class="md:col-span-12 xl:col-span-4 flex flex-col gap-stack_lg">
+<!-- Upcoming Events Card -->
+<div class="glass-panel rounded-xl p-stack_md shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-2 mb-stack_md border-b border-outline-variant/10 pb-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="event">event</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">진행 예정 이벤트</h3>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-error-container/20 border border-error/50 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="skull">skull</span>
+</div>
+<div>
+<div class="font-body-md text-body-md text-on-surface font-semibold">필드 보스</div>
+<div class="font-label-sm text-label-sm text-outline-variant group-hover:text-primary transition-colors">모아케 / 헤르무트</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-body-md text-body-md text-primary font-bold">14:00</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">2시간 15분 후</div>
+</div>
+</li>
+<li class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 border border-tertiary/50 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="directions_boat">directions_boat</span>
+</div>
+<div>
+<div class="font-body-md text-body-md text-on-surface font-semibold">유령선</div>
+<div class="font-label-sm text-label-sm text-outline-variant group-hover:text-tertiary transition-colors">1490+ 레벨</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-body-md text-body-md text-tertiary font-bold">15:00</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">3시간 15분 후</div>
+</div>
+</li>
+</ul>
+</div>
+<!-- Wandering Merchant Alert -->
+<div class="glass-panel rounded-xl p-stack_md shadow-[0_10px_30px_rgba(0,0,0,0.5)] border-tertiary/30 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-tertiary/10 rounded-full blur-xl"></div>
+<div class="flex items-center gap-2 mb-stack_md">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="storefront">storefront</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">떠돌이 상인</h3>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3 border border-outline-variant/20 mb-3 flex justify-between items-center">
+<div>
+<div class="font-body-md text-body-md text-on-surface font-semibold">웨이</div>
+<div class="font-label-sm text-label-sm text-outline-variant">애니츠 - 델파이 현</div>
+</div>
+<div class="px-2 py-1 rounded bg-tertiary/20 text-tertiary font-label-sm text-label-sm border border-tertiary/30">
+                            전설 카드
+                        </div>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline-variant">사라지기까지:</span>
+<span class="text-error font-bold">42:15</span>
+</div>
+</div>
+<!-- Progress Tracker Widget -->
+<div class="glass-panel rounded-xl p-stack_md shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack_md border-b border-outline-variant/10 pb-2">주간 골드 획득량</h3>
+<div class="mb-2 flex justify-between font-label-md text-label-md">
+<span class="text-on-surface-variant">진행도 (원정대)</span>
+<span class="text-tertiary font-bold">45,000 / 120,000</span>
+</div>
+<div class="h-2 w-full bg-[#212C42] rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-tertiary w-[37%] rounded-full shadow-[0_0_10px_rgba(255,200,71,0.5)]"></div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin_mobile pb-4 pt-2 lg:hidden bg-surface-container/90 backdrop-blur-xl border-t border-white/5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 scale-90 transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm-mobile">홈</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm text-label-sm-mobile">게시판</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-sm text-label-sm-mobile">캘린더</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-label-sm text-label-sm-mobile">쪽지</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm-mobile">마이</span>
+</a>
+</nav>
+</body></html>

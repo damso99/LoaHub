@@ -1,0 +1,12 @@
+node_modules
+dist
+target
+.env
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.env.development
+backend/src/main/resources/application.yml
+backend/src/main/resources/application-local.yml
+*.log
+

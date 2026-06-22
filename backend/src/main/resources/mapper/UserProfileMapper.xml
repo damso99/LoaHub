@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.loahub.user.UserProfileMapper">
+  <resultMap id="UserProfileResultMap" type="com.loahub.user.UserProfile">
+    <id column="id" property="id" />
+    <result column="user_id" property="userId" />
+    <result column="main_character_name" property="mainCharacterName" />
+    <result column="server_name" property="serverName" />
+    <result column="character_class" property="characterClass" />
+    <result column="item_level" property="itemLevel" />
+    <result column="character_image" property="characterImage" />
+    <result column="bio" property="bio" />
+    <result column="created_at" property="createdAt" />
+    <result column="updated_at" property="updatedAt" />
+  </resultMap>
+
+  <insert id="insertUserProfile" parameterType="com.loahub.user.UserProfile" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    INSERT INTO public.user_profiles (
+      user_id,
+      main_character_name,
+      server_name,
+      character_class,
+      item_level,
+      character_image,
+      bio
+    ) VALUES (
+      #{userId},
+      #{mainCharacterName},
+      #{serverName},
+      #{characterClass},
+      #{itemLevel},
+      #{characterImage},
+      #{bio}
+    )
+  </insert>
+
+  <select id="findByUserId" resultMap="UserProfileResultMap">
+    SELECT id, user_id, main_character_name, server_name, character_class, item_level, character_image, bio, created_at, updated_at
+    FROM public.user_profiles
+    WHERE user_id = #{userId}
+  </select>
+</mapper>

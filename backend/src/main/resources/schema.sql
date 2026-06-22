@@ -1,0 +1,3 @@
+-- Supabase PostgreSQL을 사용하는 환경에서는 이 파일을 사용하지 않습니다.
+-- 실제 테이블은 Supabase SQL Editor 또는 migrations로 관리하세요.
+-- Spring Boot는 `spring.sql.init.mode=never`로 설정되어 있어 이 파일을 자동 실행하지 않습니다.
