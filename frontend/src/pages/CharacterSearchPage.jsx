@@ -47,8 +47,13 @@ export const CharacterSearchPage = () => {
           setErrorMessage('Character not found.');
         }
       } catch (error) {
+        const isTimeout =
+          error?.code === 'ECONNABORTED' ||
+          String(error?.message ?? '').toLowerCase().includes('timeout');
         const message =
-          error?.response?.data?.message ||
+          isTimeout
+            ? '검색 시간이 초과되었습니다. 서버가 준비 중일 수 있으니 잠시 후 다시 시도해 주세요.'
+            : error?.response?.data?.message ||
           error?.response?.data?.detail ||
           error?.message ||
           'Character search failed.';

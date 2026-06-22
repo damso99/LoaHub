@@ -31,7 +31,9 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 export const api = {
   async searchCharacters(characterName) {
     const encodedCharacterName = encodeURIComponent(String(characterName ?? '').trim());
-    return apiClient.get(`/api/lostark/characters/${encodedCharacterName}`);
+    return apiClient.get(`/api/lostark/characters/${encodedCharacterName}`, {
+      timeout: 30000,
+    });
   },
   async getMe() {
     if (!useMock) {

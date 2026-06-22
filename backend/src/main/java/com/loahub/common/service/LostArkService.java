@@ -3,7 +3,9 @@ package com.loahub.common.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loahub.common.dto.LostArkCharacterResponse;
+import java.io.IOException;
 import java.net.URI;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -12,8 +14,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriUtils;
@@ -21,15 +25,21 @@ import org.springframework.web.util.UriUtils;
 @Service
 public class LostArkService {
     private static final String BASE_URL = "https://developer-lostark.game.onstove.com";
+    private static final int CONNECT_TIMEOUT_MS = 5000;
+    private static final int READ_TIMEOUT_MS = 15000;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final String apiKey;
 
     public LostArkService(@Value("${lostark.api.key:}") String apiKey) {
-        this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         this.apiKey = apiKey == null ? "" : apiKey.trim();
+
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        requestFactory.setReadTimeout(READ_TIMEOUT_MS);
+        this.restTemplate = new RestTemplate(requestFactory);
     }
 
     public LostArkCharacterResponse searchCharacter(String characterName) {
@@ -53,6 +63,8 @@ public class LostArkService {
             return toResponse(parseJson(response.getBody()));
         } catch (HttpStatusCodeException exception) {
             throw mapExternalStatus(exception);
+        } catch (ResourceAccessException exception) {
+            throw mapTimeoutOrExternalError(exception);
         } catch (ResponseStatusException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -78,6 +90,25 @@ public class LostArkService {
         return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
     }
 
+    private ResponseStatusException mapTimeoutOrExternalError(ResourceAccessException exception) {
+        if (isTimeout(exception)) {
+            return new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "로스트아크 API 응답 시간이 초과되었습니다.");
+        }
+        return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
+    }
+
+    private boolean isTimeout(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SocketTimeoutException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        String message = throwable.getMessage();
+        return message != null && message.toLowerCase().contains("timed out");
+    }
+
     private String buildBearerToken(String value) {
         String token = value == null ? "" : value.trim();
         if (token.regionMatches(true, 0, "bearer ", 0, 7)) {
@@ -93,7 +124,7 @@ public class LostArkService {
 
         try {
             return objectMapper.readTree(body);
-        } catch (Exception exception) {
+        } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
         }
     }
@@ -103,39 +134,28 @@ public class LostArkService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
         }
 
-        JsonNode profile = source.path("ArmoryProfile");
-        JsonNode readable = profile.isObject() && !profile.isMissingNode() ? profile : source;
-        if (readable.isObject()) {
-            return new LostArkCharacterResponse(
-                text(readable, "CharacterName"),
-                text(readable, "ServerName"),
-                text(readable, "CharacterClassName"),
-                text(readable, "ItemAvgLevel"),
-                text(readable, "CharacterLevel"),
-                text(readable, "ExpeditionLevel"),
-                text(readable, "PvpGradeName"),
-                text(readable, "TownLevel"),
-                text(readable, "TownName"),
-                text(readable, "Title"),
-                text(readable, "GuildName"),
-                text(readable, "CharacterImage")
-            );
+        JsonNode readable = source.path("ArmoryProfile");
+        if (!readable.isObject() || readable.isMissingNode() || readable.isNull()) {
+            readable = source;
         }
 
-        JsonNode top = source;
+        if (!readable.isObject()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
+        }
+
         return new LostArkCharacterResponse(
-            text(top, "CharacterName"),
-            text(top, "ServerName"),
-            text(top, "CharacterClassName"),
-            text(top, "ItemAvgLevel"),
-            text(top, "CharacterLevel"),
-            text(top, "ExpeditionLevel"),
-            text(top, "PvpGradeName"),
-            text(top, "TownLevel"),
-            text(top, "TownName"),
-            text(top, "Title"),
-            text(top, "GuildName"),
-            text(top, "CharacterImage")
+            text(readable, "CharacterName"),
+            text(readable, "ServerName"),
+            text(readable, "CharacterClassName"),
+            text(readable, "ItemAvgLevel"),
+            text(readable, "CharacterLevel"),
+            text(readable, "ExpeditionLevel"),
+            text(readable, "PvpGradeName"),
+            text(readable, "TownLevel"),
+            text(readable, "TownName"),
+            text(readable, "Title"),
+            text(readable, "GuildName"),
+            text(readable, "CharacterImage")
         );
     }
 
@@ -147,6 +167,6 @@ public class LostArkService {
         if (value.isTextual()) {
             return value.asText();
         }
-        return value.toString();
+        return value.asText(value.toString());
     }
 }
