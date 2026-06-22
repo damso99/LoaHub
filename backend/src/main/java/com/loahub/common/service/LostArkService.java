@@ -45,11 +45,11 @@ public class LostArkService {
     public LostArkCharacterResponse searchCharacter(String characterName) {
         String normalizedName = characterName == null ? "" : characterName.trim();
         if (normalizedName.isBlank()) {
-            throw new IllegalArgumentException("캐릭터명이 비어 있습니다.");
+            throw new IllegalArgumentException("Character name is empty.");
         }
 
         if (apiKey.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "로스트아크 API 키가 설정되지 않았습니다.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lost Ark API key is not configured.");
         }
 
         try {
@@ -68,7 +68,7 @@ public class LostArkService {
         } catch (ResponseStatusException exception) {
             throw exception;
         } catch (Exception exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Lost Ark API call failed.");
         }
     }
 
@@ -79,22 +79,22 @@ public class LostArkService {
     private ResponseStatusException mapExternalStatus(HttpStatusCodeException exception) {
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
         if (status == HttpStatus.NOT_FOUND) {
-            return new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
+            return new ResponseStatusException(HttpStatus.NOT_FOUND, "Character not found.");
         }
         if (status == HttpStatus.TOO_MANY_REQUESTS) {
-            return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "로스트아크 API 요청 한도를 초과했습니다.");
+            return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Lost Ark API rate limit exceeded.");
         }
         if (status == HttpStatus.UNAUTHORIZED || status == HttpStatus.FORBIDDEN) {
-            return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 인증에 실패했습니다.");
+            return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Lost Ark API authentication failed.");
         }
-        return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
+        return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Lost Ark API call failed.");
     }
 
     private ResponseStatusException mapTimeoutOrExternalError(ResourceAccessException exception) {
         if (isTimeout(exception)) {
-            return new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "로스트아크 API 응답 시간이 초과되었습니다.");
+            return new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Lost Ark API response timed out.");
         }
-        return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
+        return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Lost Ark API call failed.");
     }
 
     private boolean isTimeout(Throwable throwable) {
@@ -119,19 +119,19 @@ public class LostArkService {
 
     private JsonNode parseJson(String body) {
         if (body == null || body.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Character not found.");
         }
 
         try {
             return objectMapper.readTree(body);
         } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "로스트아크 API 호출에 실패했습니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Lost Ark API call failed.");
         }
     }
 
     private LostArkCharacterResponse toResponse(JsonNode source) {
         if (source == null || source.isNull() || source.isMissingNode()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Character not found.");
         }
 
         JsonNode readable = source.path("ArmoryProfile");
@@ -140,7 +140,7 @@ public class LostArkService {
         }
 
         if (!readable.isObject()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캐릭터를 찾을 수 없습니다.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Character not found.");
         }
 
         return new LostArkCharacterResponse(

@@ -52,7 +52,7 @@ export const CharacterSearchPage = () => {
           String(error?.message ?? '').toLowerCase().includes('timeout');
         const message =
           isTimeout
-            ? '검색 시간이 초과되었습니다. 서버가 준비 중일 수 있으니 잠시 후 다시 시도해 주세요.'
+            ? 'Search timed out. The server may still be starting up. Please try again in a moment.'
             : error?.response?.data?.message ||
           error?.response?.data?.detail ||
           error?.message ||
