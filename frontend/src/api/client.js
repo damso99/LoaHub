@@ -1,7 +1,6 @@
 import axios from 'axios';
 import {
   calendarContents,
-  characterSearchResults,
   commentsSeed,
   merchantsSeed,
   messagesSeed,
@@ -10,11 +9,11 @@ import {
 } from '../data/mockData';
 import { readStorage } from '../utils/storage';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8080' : '');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const useMock = import.meta.env.DEV && String(import.meta.env.VITE_USE_MOCK_API ?? 'true') === 'true';
 
 export const apiClient = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   timeout: 10000,
 });
 
@@ -27,47 +26,28 @@ apiClient.interceptors.request.use((config) => {
 });
 
 const delay = (value) => new Promise((resolve) => setTimeout(() => resolve(value), 180));
-
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 export const api = {
-  async searchCharacters(name) {
-    if (!useMock) {
-      const encodedName = encodeURIComponent(String(name ?? '').trim());
-      const { data } = await apiClient.get(`/api/characters/search?characterName=${encodedName}`);
-      return data;
-    }
-
-    if (!useMock) {
-      try {
-        const { data } = await apiClient.get('/api/characters/search', { params: { name } });
-        return data;
-      } catch {
-        // 백엔드가 없을 때는 mock 데이터로 안전하게 폴백한다.
-      }
-    }
-
-    const normalized = String(name ?? '').toLowerCase();
-    const result = characterSearchResults.filter((item) =>
-      item.characterName.toLowerCase().includes(normalized),
-    );
-    return delay({ data: clone(result.length > 0 ? result : characterSearchResults) });
+  async searchCharacters(characterName) {
+    const encodedCharacterName = encodeURIComponent(String(characterName ?? '').trim());
+    return apiClient.get(`/api/lostark/characters/${encodedCharacterName}`);
   },
   async getMe() {
     if (!useMock) {
       try {
-        const { data } = await apiClient.get('/api/auth/me');
-        return data;
+        return await apiClient.get('/api/auth/me');
       } catch {
-        // 폴백 유지
+        // fallback to mock data in local development
       }
     }
+
     return delay({
       data: {
         user: {
           id: 1,
           email: 'guardian@loahub.dev',
-          nickname: '가디언 슬레이어',
+          nickname: 'Guardian',
           provider: 'local',
           role: 'ROLE_USER',
         },
@@ -78,28 +58,28 @@ export const api = {
   async getBoards() {
     if (!useMock) {
       try {
-        const { data } = await apiClient.get('/api/boards');
-        return data;
+        return await apiClient.get('/api/boards');
       } catch {
-        // 폴백 유지
+        // fallback to mock data in local development
       }
     }
+
     return delay({
       data: [
-        { id: 1, boardType: 'FREE', boardName: '자유게시판', className: null },
-        { id: 2, boardType: 'CLASS', boardName: '직업별 게시판', className: '슬레이어' },
+        { id: 1, boardType: 'FREE', boardName: 'Free Board', className: null },
+        { id: 2, boardType: 'CLASS', boardName: 'Class Board', className: 'Slayer' },
       ],
     });
   },
   async getPosts() {
     if (!useMock) {
       try {
-        const { data } = await apiClient.get('/api/posts');
-        return data;
+        return await apiClient.get('/api/posts');
       } catch {
-        // 폴백 유지
+        // fallback to mock data in local development
       }
     }
+
     return delay({ data: clone(postsSeed) });
   },
   async getPost(id) {
@@ -111,23 +91,23 @@ export const api = {
   async getCalendarContents() {
     if (!useMock) {
       try {
-        const { data } = await apiClient.get('/api/calendar/week');
-        return data;
+        return await apiClient.get('/api/calendar/week');
       } catch {
-        // 폴백 유지
+        // fallback to mock data in local development
       }
     }
+
     return delay({ data: clone(calendarContents) });
   },
   async getMerchants() {
     if (!useMock) {
       try {
-        const { data } = await apiClient.get('/api/merchants');
-        return data;
+        return await apiClient.get('/api/merchants');
       } catch {
-        // 폴백 유지
+        // fallback to mock data in local development
       }
     }
+
     return delay({ data: clone(merchantsSeed) });
   },
   async getMessages() {
@@ -139,9 +119,10 @@ export const api = {
         ]);
         return { inbox: inbox.data, sent: sent.data };
       } catch {
-        // 폴백 유지
+        // fallback to mock data in local development
       }
     }
+
     return delay({
       data: {
         inbox: clone(messagesSeed.filter((item) => item.receiverId === 1)),

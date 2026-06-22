@@ -52,6 +52,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/posts").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/posts/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/lostark/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/characters/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/calendar/today", "/api/calendar/week").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/merchants").permitAll()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppState } from '../context/AppStateContext';
 import { Button } from '../components/Button';
@@ -7,16 +7,59 @@ import { CharacterCard } from '../components/CharacterCard';
 import { EmptyState } from '../components/EmptyState';
 import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
-import { characterSearchResults } from '../data/mockData';
 import { useAuthGuard } from '../hooks/useAuthGuard';
+
+const normalizeCharacter = (character) => ({
+  ...character,
+  characterClass: character.characterClass ?? character.characterClassName ?? '',
+  itemLevel: character.itemLevel ?? character.itemAvgLevel ?? '',
+});
 
 export const CharacterSearchPage = () => {
   const { setMainCharacter, searchCharactersLocal } = useAppState();
   const { requireLogin } = useAuthGuard();
   const [searchParams] = useSearchParams();
   const [keyword, setKeyword] = useState('');
-  const [results, setResults] = useState(characterSearchResults);
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const runSearch = useCallback(
+    async (value) => {
+      const query = String(value ?? '').trim();
+      if (!query) {
+        setResults([]);
+        setErrorMessage('Please enter a character name.');
+        return;
+      }
+
+      setLoading(true);
+      setErrorMessage('');
+      try {
+        const nextResults = await searchCharactersLocal(query);
+        const normalizedResults = Array.isArray(nextResults)
+          ? nextResults.map(normalizeCharacter)
+          : nextResults
+            ? [normalizeCharacter(nextResults)]
+            : [];
+        setResults(normalizedResults);
+        if (normalizedResults.length === 0) {
+          setErrorMessage('Character not found.');
+        }
+      } catch (error) {
+        const message =
+          error?.response?.data?.message ||
+          error?.response?.data?.detail ||
+          error?.message ||
+          'Character search failed.';
+        setResults([]);
+        setErrorMessage(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchCharactersLocal],
+  );
 
   useEffect(() => {
     const query = searchParams.get('q');
@@ -25,16 +68,8 @@ export const CharacterSearchPage = () => {
     }
 
     setKeyword(query);
-    void (async () => {
-      setLoading(true);
-      try {
-        const nextResults = await searchCharactersLocal(query);
-        setResults(nextResults.length > 0 ? nextResults : characterSearchResults);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [searchCharactersLocal, searchParams]);
+    void runSearch(query);
+  }, [runSearch, searchParams]);
 
   const filteredResults = useMemo(() => {
     const normalized = keyword.toLowerCase();
@@ -48,44 +83,40 @@ export const CharacterSearchPage = () => {
 
   const handleSearch = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    try {
-      const nextResults = await searchCharactersLocal(keyword);
-      setResults(nextResults.length > 0 ? nextResults : characterSearchResults);
-    } finally {
-      setLoading(false);
-    }
+    await runSearch(keyword);
   };
 
   return (
     <div className="page-stack">
       <PageHeader
-        title="캐릭터 검색"
-        description="캐릭터명으로 검색하고 대표 캐릭터로 바로 설정할 수 있습니다."
+        title="Character Search"
+        description="Enter a character name to view Lost Ark Open API results."
       />
 
       <Card className="search-card">
         <form className="search-form" onSubmit={handleSearch}>
           <Input
-            label="캐릭터명"
-            placeholder="예: Guardian Slayer"
+            label="Character name"
+            placeholder="e.g. Damso"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />
-          <Button type="submit">{loading ? '검색 중' : '검색하기'}</Button>
+          <Button type="submit">{loading ? 'Searching...' : 'Search'}</Button>
         </form>
       </Card>
 
       {loading ? (
         <Card className="loading-state">
-          <h2 className="loading-state__title">캐릭터 정보를 불러오는 중입니다.</h2>
-          <p className="loading-state__desc">잠시만 기다리면 검색 결과 카드가 표시됩니다.</p>
+          <h2 className="loading-state__title">Loading character information.</h2>
+          <p className="loading-state__desc">Please wait while the search results load.</p>
         </Card>
+      ) : errorMessage ? (
+        <EmptyState title="Search failed" description={errorMessage} />
       ) : filteredResults.length > 0 ? (
         <section className="grid grid-2">
           {filteredResults.map((character) => (
             <CharacterCard
-              key={character.id}
+              key={character.characterName}
               character={character}
               onSetMain={(nextCharacter) => {
                 if (!requireLogin()) {
@@ -98,10 +129,7 @@ export const CharacterSearchPage = () => {
           ))}
         </section>
       ) : (
-        <EmptyState
-          title="캐릭터를 찾지 못했습니다."
-          description="캐릭터명을 다시 확인한 뒤 검색해보세요."
-        />
+        <EmptyState title="No characters yet" description="Enter a character name and search." />
       )}
     </div>
   );
