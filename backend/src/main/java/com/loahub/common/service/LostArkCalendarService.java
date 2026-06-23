@@ -163,11 +163,15 @@ public class LostArkCalendarService {
                         .map(CalendarRewardResponse::name)
                         .filter(value -> value != null && !value.isBlank())
                         .collect(Collectors.joining(", "));
+                String rewardType = rewards.isEmpty() ? null : firstNonBlank(rewards.get(0).grade(), "보상");
                 unique.put(dedupeKey, new LostArkCalendarTodayItemResponse(
                     schedule.id(),
                     contentName,
                     sectionType,
                     startTime,
+                    trim(schedule.contentsIcon()),
+                    rewardType,
+                    rewards,
                     rewards,
                     rewardText == null || rewardText.isBlank() ? null : rewardText
                 ));
@@ -349,7 +353,7 @@ public class LostArkCalendarService {
                 continue;
             }
 
-            CalendarRewardResponse reward = new CalendarRewardResponse(trim(rewardItem.name()), trim(rewardItem.icon()), trim(rewardItem.grade()));
+            CalendarRewardResponse reward = new CalendarRewardResponse(trim(rewardItem.name()), trim(rewardItem.icon()), trim(rewardItem.grade()), trim(rewardItem.icon()));
             String key = reward.name() + "|" + reward.icon() + "|" + reward.grade();
             if (seen.add(key)) {
                 rewards.add(reward);
@@ -420,7 +424,9 @@ public class LostArkCalendarService {
 
         try {
             CalendarRewardResponse[] rewards = objectMapper.readValue(rewardsJson, CalendarRewardResponse[].class);
-            return Arrays.asList(rewards);
+            return Arrays.stream(rewards)
+                .map(reward -> new CalendarRewardResponse(reward.name(), reward.icon(), reward.grade(), firstNonBlank(reward.iconUrl(), reward.icon())))
+                .collect(Collectors.toList());
         } catch (JsonProcessingException exception) {
             return List.of();
         }
@@ -467,6 +473,10 @@ public class LostArkCalendarService {
 
     private String formatDate(LocalDate date) {
         return date == null ? null : DATE_FORMATTER.format(date);
+    }
+
+    private String firstNonBlank(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private List<String> safeList(List<String> values) {

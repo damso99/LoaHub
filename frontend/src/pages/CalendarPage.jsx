@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
+import { CalendarTodaySection } from '../components/CalendarTodaySection';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
@@ -9,81 +10,106 @@ import { useAppState } from '../context/AppStateContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 
 const SECTION_CONFIG = [
-  { key: 'adventureIslands', title: '모험섬', tone: 'primary' },
-  { key: 'chaosGates', title: '카게', tone: 'warning' },
-  { key: 'fieldBosses', title: '필보', tone: 'info' },
+  { key: 'adventureIslands', title: '모험 섬', icon: 'explore', tone: 'primary' },
+  { key: 'fieldBosses', title: '필드 보스', icon: 'public', tone: 'info' },
+  { key: 'chaosGates', title: '카오스게이트', icon: 'bolt', tone: 'warning' },
 ];
 
-const normalizeRewardText = (item) => {
-  if (item?.rewardText) {
-    return String(item.rewardText).trim();
-  }
+const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
-  if (!Array.isArray(item?.rewardItems) || item.rewardItems.length === 0) {
-    return '';
-  }
+const getKstDateParts = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
 
-  return item.rewardItems
-    .map((reward) => reward?.name ?? reward?.Name ?? '')
-    .filter((rewardName) => rewardName.trim().length > 0)
-    .join(', ');
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const normalized = `${map.year}-${map.month}-${map.day}`;
+  const weekdayIndex = new Date(`${normalized}T00:00:00Z`).getUTCDay();
+
+  return {
+    dateKey: normalized,
+    weekdayIndex,
+  };
 };
 
-const formatStartTime = (value) => {
+const addDays = (dateKey, amount) => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + amount);
+  const nextYear = date.getUTCFullYear();
+  const nextMonth = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const nextDay = String(date.getUTCDate()).padStart(2, '0');
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+};
+
+const buildWeekDays = () => {
+  const { dateKey: todayKey, weekdayIndex } = getKstDateParts();
+  const mondayOffset = (weekdayIndex + 6) % 7;
+  const mondayKey = addDays(todayKey, -mondayOffset);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const dateKey = addDays(mondayKey, index);
+    const dayIndex = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
+    return {
+      dateKey,
+      dayLabel: WEEKDAY_LABELS[dayIndex],
+      dayNumber: Number(dateKey.slice(8, 10)),
+      isToday: dateKey === todayKey,
+      isSaturday: dayIndex === 6,
+      isSunday: dayIndex === 0,
+    };
+  });
+};
+
+const parseKstDateTime = (value) => {
   const text = String(value ?? '').trim();
   if (!text) {
+    return null;
+  }
+
+  const normalized = text.includes(' ') ? text.replace(' ', 'T') : text;
+  const withZone = /[zZ]|[+-]\d\d:\d\d$/.test(normalized) ? normalized : `${normalized}+09:00`;
+  const parsed = new Date(withZone);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatCountdown = (startTime, now) => {
+  const target = parseKstDateTime(startTime);
+  if (!target) {
     return '';
   }
 
-  if (text.includes('T')) {
-    return text.slice(11, 16);
+  const diff = target.getTime() - now.getTime();
+  if (diff <= 0) {
+    return '진행 중';
   }
 
-  return text.slice(0, 5);
+  const totalSeconds = Math.floor(diff / 1000);
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  return `시작까지 ${hours}:${minutes}:${seconds}`;
 };
 
-const TodayScheduleCard = ({ title, tone, items }) => {
-  return (
-    <Card className="calendar-today-section">
-      <div className="calendar-today-section__header">
-        <div>
-          <p className="calendar-today-section__eyebrow">오늘 일정</p>
-          <h2>{title}</h2>
-        </div>
-        <Badge tone={tone}>{items.length}개</Badge>
-      </div>
+const getSectionCountdown = (items, now) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return '오늘 일정이 없습니다.';
+  }
 
-      <div className="calendar-today-section__items">
-        {items.length > 0 ? (
-          items.map((item) => {
-            const rewardText = normalizeRewardText(item);
+  const sortedTimes = items
+    .map((item) => parseKstDateTime(item.startTime))
+    .filter((value) => value instanceof Date && !Number.isNaN(value.getTime()))
+    .sort((left, right) => left.getTime() - right.getTime());
 
-            return (
-              <article key={item.id} className="calendar-today-item">
-                <div className="calendar-today-item__top">
-                  <div className="calendar-today-item__body">
-                    <div className="calendar-today-item__badges">
-                      <Badge tone={tone}>{item.contentType}</Badge>
-                      <Badge tone="neutral">{formatStartTime(item.startTime)}</Badge>
-                    </div>
-                    <h3>{item.contentName}</h3>
-                  </div>
+  if (sortedTimes.length === 0) {
+    return '오늘 일정이 없습니다.';
+  }
 
-                  <div className="calendar-today-item__time">
-                    <strong>{formatStartTime(item.startTime)} 시작</strong>
-                  </div>
-                </div>
-
-                {rewardText ? <p className="calendar-today-item__reward">{rewardText}</p> : null}
-              </article>
-            );
-          })
-        ) : (
-          <div className="calendar-today-section__empty">오늘 일정이 없습니다.</div>
-        )}
-      </div>
-    </Card>
-  );
+  const upcoming = sortedTimes.find((time) => time.getTime() > now.getTime()) ?? sortedTimes[0];
+  return formatCountdown(upcoming.toISOString(), now);
 };
 
 export const CalendarPage = () => {
@@ -92,6 +118,7 @@ export const CalendarPage = () => {
   const [calendarToday, setCalendarToday] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [nowTick, setNowTick] = useState(() => new Date());
 
   const loadCalendar = useCallback(async () => {
     setLoading(true);
@@ -124,12 +151,21 @@ export const CalendarPage = () => {
     void loadCalendar();
   }, [loadCalendar]);
 
-  const sectionData = useMemo(() => {
-    return SECTION_CONFIG.map((section) => ({
-      ...section,
-      items: Array.isArray(calendarToday?.[section.key]) ? calendarToday[section.key] : [],
-    }));
-  }, [calendarToday]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const weekDays = useMemo(() => buildWeekDays(), []);
+
+  const sectionData = useMemo(
+    () =>
+      SECTION_CONFIG.map((section) => ({
+        ...section,
+        items: Array.isArray(calendarToday?.[section.key]) ? calendarToday[section.key] : [],
+      })),
+    [calendarToday],
+  );
 
   const toggleNotification = (id) => {
     if (!requireLogin()) {
@@ -145,17 +181,35 @@ export const CalendarPage = () => {
     <div className="page-stack calendar-page">
       <PageHeader
         title="로스트아크 오늘 일정"
-        description="Supabase에 저장된 캐시를 읽어 오늘자 모험섬, 카게, 필보 일정을 보여줍니다."
+        description="DB에 저장된 오늘자 로스트아크 일정만 모아 모험 섬, 필드 보스, 카오스게이트를 보여줍니다."
         action={<Button variant="secondary" onClick={() => void loadCalendar()}>새로고침</Button>}
       />
 
-      <Card className="section-card calendar-summary-card">
-        <div className="section-card__header calendar-page__meta">
+      <Card className="section-card calendar-today-toolbar">
+        <div className="calendar-today-toolbar__header">
           <div>
-            <h2>오늘 기준 일정</h2>
-            <p>로스트아크 기준 06:00부터 다음날 05:59:59까지의 데이터를 표시합니다.</p>
+            <h2>이번 주 날짜</h2>
+            <p>오늘 날짜를 보라색으로 강조했습니다.</p>
           </div>
-          <Badge tone="primary">모험섬 / 카게 / 필보</Badge>
+          <Badge tone="primary">{calendarToday?.date ?? getKstDateParts().dateKey}</Badge>
+        </div>
+
+        <div className="calendar-week-bar" role="list" aria-label="이번 주 날짜 선택 바">
+          {weekDays.map((day) => (
+            <div
+              key={day.dateKey}
+              role="listitem"
+              className={[
+                'calendar-week-pill',
+                day.isToday ? 'is-today' : '',
+                day.isSaturday ? 'is-saturday' : '',
+                day.isSunday ? 'is-sunday' : '',
+              ].join(' ')}
+            >
+              <span className="calendar-week-pill__day">{day.dayLabel}</span>
+              <strong className="calendar-week-pill__date">{day.dayNumber}</strong>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -169,11 +223,13 @@ export const CalendarPage = () => {
       ) : (
         <section className="calendar-today-grid">
           {sectionData.map((section) => (
-            <TodayScheduleCard
+            <CalendarTodaySection
               key={section.key}
               title={section.title}
+              icon={section.icon}
               tone={section.tone}
               items={section.items}
+              countdownText={getSectionCountdown(section.items, nowTick)}
             />
           ))}
         </section>

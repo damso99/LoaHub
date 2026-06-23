@@ -7,6 +7,9 @@ public record LostArkCalendarTodayItemResponse(
     String contentName,
     String contentType,
     String startTime,
+    String imageUrl,
+    String rewardType,
+    List<CalendarRewardResponse> rewards,
     List<CalendarRewardResponse> rewardItems,
     String rewardText
 ) {
