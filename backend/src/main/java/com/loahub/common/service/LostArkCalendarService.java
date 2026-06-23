@@ -131,13 +131,16 @@ public class LostArkCalendarService {
         try {
             List<LostArkCalendarResponseItem> sourceItems = client.fetchWeeklyCalendar();
             batch = normalize(sourceItems);
+            final LocalDate finalWeekStartDate = batch.weekStartDate();
+            final LocalDate finalWeekEndDate = batch.weekEndDate();
+            final List<LostArkCalendarSchedule> finalSchedules = batch.schedules();
             transactionTemplate.executeWithoutResult(status -> {
-                scheduleMapper.deleteByWeekRange(batch.weekStartDate(), batch.weekEndDate());
-                if (!batch.schedules().isEmpty()) {
-                    scheduleMapper.insertSchedules(batch.schedules());
+                scheduleMapper.deleteByWeekRange(finalWeekStartDate, finalWeekEndDate);
+                if (!finalSchedules.isEmpty()) {
+                    scheduleMapper.insertSchedules(finalSchedules);
                 }
             });
-            syncLogService.success(logId, batch.weekStartDate(), batch.weekEndDate(), batch.fetchedCount(), batch.filteredCount(), batch.savedCount());
+            syncLogService.success(logId, finalWeekStartDate, finalWeekEndDate, batch.fetchedCount(), batch.filteredCount(), batch.savedCount());
             return new LostArkCalendarSyncResponse("SUCCESS", batch.fetchedCount(), batch.filteredCount(), batch.savedCount());
         } catch (Exception exception) {
             syncLogService.fail(
