@@ -6,8 +6,6 @@ import { CalendarTodaySection } from '../components/CalendarTodaySection';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
-import { useAppState } from '../context/AppStateContext';
-import { useAuthGuard } from '../hooks/useAuthGuard';
 
 const SECTION_CONFIG = [
   { key: 'adventureIslands', title: '모험 섬', icon: 'explore', tone: 'primary' },
@@ -113,8 +111,6 @@ const getSectionCountdown = (items, now) => {
 };
 
 export const CalendarPage = () => {
-  const { notifications, setNotifications } = useAppState();
-  const { requireLogin } = useAuthGuard();
   const todayKey = useMemo(() => getKstDateParts().dateKey, []);
   const [calendarToday, setCalendarToday] = useState(null);
   const [selectedDate, setSelectedDate] = useState(todayKey);
@@ -183,16 +179,6 @@ export const CalendarPage = () => {
       })),
     [calendarToday],
   );
-
-  const toggleNotification = (id) => {
-    if (!requireLogin()) {
-      return;
-    }
-
-    setNotifications((current) =>
-      current.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)),
-    );
-  };
 
   const handleSelectDate = (dateKey) => {
     setSelectedDate(dateKey);
@@ -308,26 +294,6 @@ export const CalendarPage = () => {
         </section>
       )}
 
-      <Card className="section-card">
-        <h2>알림 설정</h2>
-        <div className="notification-list">
-          {notifications.map((item) => (
-            <div key={item.id} className="notification-item">
-              <div>
-                <strong>{item.contentName}</strong>
-                <p>{item.notifyBeforeMinutes}분 전에 알림</p>
-              </div>
-              <button
-                type="button"
-                className={`toggle-pill ${item.enabled ? 'on' : ''}`}
-                onClick={() => toggleNotification(item.id)}
-              >
-                {item.enabled ? 'ON' : 'OFF'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 };

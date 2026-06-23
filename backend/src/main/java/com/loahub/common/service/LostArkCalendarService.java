@@ -160,12 +160,6 @@ public class LostArkCalendarService {
                 }
 
                 List<CalendarRewardResponse> rewards = readRewards(schedule.rewards());
-                String rewardText = rewards.isEmpty()
-                    ? null
-                    : rewards.stream()
-                        .map(CalendarRewardResponse::name)
-                        .filter(value -> value != null && !value.isBlank())
-                        .collect(Collectors.joining(", "));
                 String rewardType = rewards.isEmpty() ? null : firstNonBlank(rewards.get(0).grade(), "보상");
                 unique.put(dedupeKey, new LostArkCalendarTodayItemResponse(
                     schedule.id(),
@@ -176,7 +170,7 @@ public class LostArkCalendarService {
                     rewardType,
                     rewards,
                     rewards,
-                    rewardText == null || rewardText.isBlank() ? null : rewardText
+                    null
                 ));
             });
 
@@ -191,11 +185,11 @@ public class LostArkCalendarService {
         if (matchesTodayCategory(categoryName, contentName, rawContent, "모험섬", "ADVENTUREISLAND")) {
             return "모험섬";
         }
-        if (matchesTodayCategory(categoryName, contentName, rawContent, "카오스게이트", "카게", "CHAOSGATE")) {
-            return "카게";
-        }
         if (matchesTodayCategory(categoryName, contentName, rawContent, "필드보스", "필보", "FIELDBOSS")) {
             return "필보";
+        }
+        if (matchesTodayCategory(categoryName, contentName, rawContent, "카오스게이트", "카게", "CHAOSGATE")) {
+            return "카게";
         }
         return null;
     }

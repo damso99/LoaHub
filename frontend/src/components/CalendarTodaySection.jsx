@@ -45,8 +45,6 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText }
                   <h3>{item.contentName}</h3>
                   <p className="calendar-today-item__time">{item.startTime} 시작</p>
 
-                  {item.rewardText ? <p className="calendar-today-item__reward-text">{item.rewardText}</p> : null}
-
                   {rewards.length > 0 ? (
                     <div className="calendar-today-item__rewards" aria-label={`${item.contentName} 보상`}>
                       {rewards.map((reward) => {
