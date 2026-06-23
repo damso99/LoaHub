@@ -19,7 +19,7 @@
       <arg column="slot_hhmm" javaType="string" />
       <arg column="rewards" javaType="string" />
       <arg column="raw_content" javaType="string" />
-      <arg column="is_active" javaType="boolean" />
+      <arg column="is_active" javaType="_boolean" />
       <arg column="created_at" javaType="java.time.OffsetDateTime" />
       <arg column="updated_at" javaType="java.time.OffsetDateTime" />
     </constructor>
