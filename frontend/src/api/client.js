@@ -1,6 +1,5 @@
 import axios from 'axios';
 import {
-  calendarContents,
   commentsSeed,
   merchantsSeed,
   messagesSeed,
@@ -33,6 +32,22 @@ export const api = {
   async searchCharacters(characterName) {
     const encodedCharacterName = encodeURIComponent(String(characterName ?? '').trim());
     return apiClient.get(`/api/lostark/characters/${encodedCharacterName}`, {
+      timeout: 30000,
+    });
+  },
+  async getLostArkCalendarToday() {
+    return apiClient.get('/api/lostark/calendar/today', {
+      timeout: 30000,
+    });
+  },
+  async getLostArkCalendarWeek() {
+    return apiClient.get('/api/lostark/calendar/week', {
+      timeout: 30000,
+    });
+  },
+  async getLostArkCalendarDate(date) {
+    return apiClient.get('/api/lostark/calendar/date', {
+      params: { date },
       timeout: 30000,
     });
   },
@@ -184,15 +199,9 @@ export const api = {
     return delay({ data: { post, comments } });
   },
   async getCalendarContents() {
-    if (!useMock) {
-      try {
-        return await apiClient.get('/api/calendar/week');
-      } catch {
-        // fallback to mock data in local development
-      }
-    }
-
-    return delay({ data: clone(calendarContents) });
+    return apiClient.get('/api/lostark/calendar/week', {
+      timeout: 30000,
+    });
   },
   async getMessages() {
     if (!useMock) {

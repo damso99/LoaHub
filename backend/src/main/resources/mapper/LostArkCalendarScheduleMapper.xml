@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.loahub.common.mapper.LostArkCalendarScheduleMapper">
+  <resultMap id="LostArkCalendarScheduleResultMap" type="com.loahub.common.model.DomainModels$LostArkCalendarSchedule">
+    <id column="id" property="id" />
+    <result column="week_start_date" property="weekStartDate" />
+    <result column="week_end_date" property="weekEndDate" />
+    <result column="category_name" property="categoryName" />
+    <result column="contents_name" property="contentsName" />
+    <result column="contents_icon" property="contentsIcon" />
+    <result column="min_item_level" property="minItemLevel" />
+    <result column="location" property="location" />
+    <result column="start_time_kst" property="startTimeKst" />
+    <result column="start_date" property="startDate" />
+    <result column="start_hhmm" property="startHhmm" />
+    <result column="slot_hhmm" property="slotHhmm" />
+    <result column="rewards" property="rewards" />
+    <result column="raw_content" property="rawContent" />
+    <result column="is_active" property="isActive" />
+    <result column="created_at" property="createdAt" />
+    <result column="updated_at" property="updatedAt" />
+  </resultMap>
+
+  <delete id="deleteByWeekRange">
+    DELETE FROM public.lostark_calendar_schedules
+    WHERE week_start_date = #{weekStartDate}
+      AND week_end_date = #{weekEndDate}
+  </delete>
+
+  <insert id="insertSchedules">
+    INSERT INTO public.lostark_calendar_schedules (
+      id,
+      week_start_date,
+      week_end_date,
+      category_name,
+      contents_name,
+      contents_icon,
+      min_item_level,
+      location,
+      start_time_kst,
+      start_date,
+      start_hhmm,
+      slot_hhmm,
+      rewards,
+      raw_content,
+      is_active
+    )
+    VALUES
+    <foreach collection="items" item="item" separator=",">
+      (
+        CAST(#{item.id} AS uuid),
+        #{item.weekStartDate},
+        #{item.weekEndDate},
+        #{item.categoryName},
+        #{item.contentsName},
+        #{item.contentsIcon},
+        #{item.minItemLevel},
+        #{item.location},
+        #{item.startTimeKst},
+        #{item.startDate},
+        #{item.startHhmm},
+        #{item.slotHhmm},
+        CAST(#{item.rewards} AS jsonb),
+        CAST(#{item.rawContent} AS jsonb),
+        #{item.isActive}
+      )
+    </foreach>
+  </insert>
+
+  <select id="findActiveByDate" resultMap="LostArkCalendarScheduleResultMap">
+    SELECT id, week_start_date, week_end_date, category_name, contents_name, contents_icon, min_item_level, location, start_time_kst, start_date, start_hhmm, slot_hhmm, rewards, raw_content, is_active, created_at, updated_at
+    FROM public.lostark_calendar_schedules
+    WHERE is_active = true
+      AND start_date = #{date}
+    ORDER BY slot_hhmm, category_name, start_time_kst
+  </select>
+
+  <select id="findActiveWeek" resultMap="LostArkCalendarScheduleResultMap">
+    SELECT id, week_start_date, week_end_date, category_name, contents_name, contents_icon, min_item_level, location, start_time_kst, start_date, start_hhmm, slot_hhmm, rewards, raw_content, is_active, created_at, updated_at
+    FROM public.lostark_calendar_schedules
+    WHERE is_active = true
+    ORDER BY start_date, slot_hhmm, category_name, start_time_kst
+  </select>
+</mapper>

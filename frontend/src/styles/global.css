@@ -1458,6 +1458,132 @@ select {
   color: var(--primary);
 }
 
+.calendar-page__meta {
+  margin-bottom: 0;
+}
+
+.calendar-page__meta p,
+.calendar-page__summary {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.calendar-timeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.calendar-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+}
+
+.calendar-slot__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendar-slot__eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.calendar-slot__header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.calendar-slot__items {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-slot__empty {
+  padding: 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  text-align: center;
+}
+
+.calendar-event {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.calendar-event__top {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.calendar-event__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.calendar-event__icon--placeholder {
+  background: linear-gradient(135deg, rgba(124, 184, 255, 0.14), rgba(34, 211, 238, 0.08));
+}
+
+.calendar-event__body {
+  min-width: 0;
+}
+
+.calendar-event__badges,
+.calendar-event__rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.calendar-event__body h3 {
+  margin: 8px 0 4px;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.calendar-event__body p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.calendar-event__time {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.calendar-event__time strong {
+  color: var(--primary);
+}
+
+.calendar-event__time span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .message-list {
   display: grid;
   gap: 14px;
@@ -1800,6 +1926,20 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .calendar-timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-event__top {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .calendar-event__time {
+    justify-items: flex-start;
+    text-align: left;
+  }
+
   .signup-copy {
     border-right: 0;
     border-bottom: 1px solid rgba(148, 163, 184, 0.12);
@@ -1929,6 +2069,10 @@ select {
   .section-card,
   .empty-state {
     border-radius: 16px;
+  }
+
+  .calendar-event {
+    padding: 14px;
   }
 
   .button {

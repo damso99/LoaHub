@@ -129,5 +129,41 @@ public final class DomainModels {
         OffsetDateTime createdAt
     ) {
     }
-}
 
+    public record LostArkCalendarSchedule(
+        String id,
+        java.time.LocalDate weekStartDate,
+        java.time.LocalDate weekEndDate,
+        String categoryName,
+        String contentsName,
+        String contentsIcon,
+        Integer minItemLevel,
+        String location,
+        java.time.LocalDateTime startTimeKst,
+        java.time.LocalDate startDate,
+        String startHhmm,
+        String slotHhmm,
+        String rewards,
+        String rawContent,
+        boolean isActive,
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt
+    ) {
+    }
+
+    public record LostArkCalendarSyncLog(
+        String id,
+        String syncType,
+        String status,
+        java.time.LocalDate weekStartDate,
+        java.time.LocalDate weekEndDate,
+        Integer fetchedCount,
+        Integer filteredCount,
+        Integer savedCount,
+        String message,
+        String errorMessage,
+        OffsetDateTime startedAt,
+        OffsetDateTime finishedAt
+    ) {
+    }
+}

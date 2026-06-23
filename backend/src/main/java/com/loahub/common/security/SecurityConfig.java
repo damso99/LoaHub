@@ -54,9 +54,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/lostark/characters/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/lostark/markets/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/lostark/calendar/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/characters/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/calendar/today", "/api/calendar/week").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/merchants", "/api/merchants/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/admin/lostark/calendar/sync").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/comments/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

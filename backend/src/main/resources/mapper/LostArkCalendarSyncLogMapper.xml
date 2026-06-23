@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.loahub.common.mapper.LostArkCalendarSyncLogMapper">
+  <resultMap id="LostArkCalendarSyncLogResultMap" type="com.loahub.common.model.DomainModels$LostArkCalendarSyncLog">
+    <id column="id" property="id" />
+    <result column="sync_type" property="syncType" />
+    <result column="status" property="status" />
+    <result column="week_start_date" property="weekStartDate" />
+    <result column="week_end_date" property="weekEndDate" />
+    <result column="fetched_count" property="fetchedCount" />
+    <result column="filtered_count" property="filteredCount" />
+    <result column="saved_count" property="savedCount" />
+    <result column="message" property="message" />
+    <result column="error_message" property="errorMessage" />
+    <result column="started_at" property="startedAt" />
+    <result column="finished_at" property="finishedAt" />
+  </resultMap>
+
+  <insert id="insertLog">
+    INSERT INTO public.lostark_calendar_sync_logs (
+      id,
+      sync_type,
+      status,
+      week_start_date,
+      week_end_date,
+      fetched_count,
+      filtered_count,
+      saved_count,
+      message,
+      error_message,
+      started_at,
+      finished_at
+    ) VALUES (
+      CAST(#{id} AS uuid),
+      #{syncType},
+      #{status},
+      #{weekStartDate},
+      #{weekEndDate},
+      #{fetchedCount},
+      #{filteredCount},
+      #{savedCount},
+      #{message},
+      #{errorMessage},
+      #{startedAt},
+      #{finishedAt}
+    )
+  </insert>
+
+  <update id="updateSuccess">
+    UPDATE public.lostark_calendar_sync_logs
+    SET week_start_date = #{weekStartDate},
+        week_end_date = #{weekEndDate},
+        fetched_count = #{fetchedCount},
+        filtered_count = #{filteredCount},
+        saved_count = #{savedCount},
+        status = 'SUCCESS',
+        message = #{message},
+        error_message = NULL,
+        finished_at = #{finishedAt}
+    WHERE id = CAST(#{id} AS uuid)
+  </update>
+
+  <update id="updateFail">
+    UPDATE public.lostark_calendar_sync_logs
+    SET week_start_date = #{weekStartDate},
+        week_end_date = #{weekEndDate},
+        fetched_count = #{fetchedCount},
+        filtered_count = #{filteredCount},
+        saved_count = #{savedCount},
+        status = 'FAIL',
+        message = #{message},
+        error_message = #{errorMessage},
+        finished_at = #{finishedAt}
+    WHERE id = CAST(#{id} AS uuid)
+  </update>
+</mapper>
