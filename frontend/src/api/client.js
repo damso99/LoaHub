@@ -8,7 +8,6 @@ import {
 } from '../data/mockData';
 import {
   getLostArkCalendarDate,
-  getLostArkCalendarToday,
   getLostArkCalendarWeek,
 } from './lostarkCalendarApi';
 import { marketItemsSeed } from '../data/marketMockData';
@@ -41,7 +40,7 @@ export const api = {
     });
   },
   async getLostArkCalendarToday() {
-    return { data: { data: await getLostArkCalendarToday() } };
+    return apiClient.get('/api/lostark/calendar/today');
   },
   async getLostArkCalendarWeek() {
     return { data: { data: await getLostArkCalendarWeek() } };

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loahub.common.dto.CalendarRewardResponse;
 import com.loahub.common.dto.LostArkCalendarDayResponse;
 import com.loahub.common.dto.LostArkCalendarResponseItem;
+import com.loahub.common.dto.LostArkCalendarTodayItemResponse;
+import com.loahub.common.dto.LostArkCalendarTodayResponse;
 import com.loahub.common.dto.LostArkCalendarScheduleResponse;
 import com.loahub.common.dto.LostArkCalendarSlotGroupResponse;
 import com.loahub.common.dto.LostArkCalendarSyncResponse;
@@ -15,6 +17,7 @@ import com.loahub.common.mapper.LostArkCalendarScheduleMapper;
 import com.loahub.common.model.DomainModels.LostArkCalendarSchedule;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Locale;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -83,8 +87,21 @@ public class LostArkCalendarService {
         }
     }
 
-    public LostArkCalendarDayResponse today() {
-        return buildDayResponse(LocalDate.now(ZoneId.of("Asia/Seoul")), scheduleMapper.findActiveByDate(LocalDate.now(ZoneId.of("Asia/Seoul"))));
+    public LostArkCalendarTodayResponse today() {
+        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+        LocalDateTime now = LocalDateTime.now(zoneId);
+        LocalDate baseDate = now.toLocalDate();
+        LocalDateTime startTime = now.toLocalTime().isBefore(LocalTime.of(6, 0))
+            ? baseDate.minusDays(1).atTime(6, 0)
+            : baseDate.atTime(6, 0);
+        LocalDateTime endTime = startTime.plusDays(1);
+
+        List<LostArkCalendarSchedule> schedules = scheduleMapper.findActiveByStartTimeRange(startTime, endTime);
+        return new LostArkCalendarTodayResponse(
+            buildTodaySection(schedules, "모험섬"),
+            buildTodaySection(schedules, "카게"),
+            buildTodaySection(schedules, "필보")
+        );
     }
 
     public LostArkCalendarWeekResponse week() {
@@ -122,6 +139,84 @@ public class LostArkCalendarService {
 
     public LostArkCalendarDayResponse date(LocalDate date) {
         return buildDayResponse(date, scheduleMapper.findActiveByDate(date));
+    }
+
+    private List<LostArkCalendarTodayItemResponse> buildTodaySection(List<LostArkCalendarSchedule> schedules, String sectionType) {
+        Map<String, LostArkCalendarTodayItemResponse> unique = new LinkedHashMap<>();
+        schedules.stream()
+            .filter(schedule -> sectionType.equals(resolveTodaySectionType(schedule)))
+            .sorted(Comparator
+                .comparing(LostArkCalendarSchedule::startTimeKst, Comparator.nullsLast(LocalDateTime::compareTo))
+                .thenComparing(LostArkCalendarSchedule::contentsName, Comparator.nullsLast(String::compareTo)))
+            .forEach(schedule -> {
+                String startTime = formatShortTime(schedule.startTimeKst());
+                String contentName = trim(schedule.contentsName());
+                String dedupeKey = contentName + "|" + startTime;
+                if (unique.containsKey(dedupeKey)) {
+                    return;
+                }
+
+                List<CalendarRewardResponse> rewards = readRewards(schedule.rewards());
+                String rewardText = rewards.isEmpty()
+                    ? null
+                    : rewards.stream()
+                        .map(CalendarRewardResponse::name)
+                        .filter(value -> value != null && !value.isBlank())
+                        .collect(Collectors.joining(", "));
+                unique.put(dedupeKey, new LostArkCalendarTodayItemResponse(
+                    schedule.id(),
+                    contentName,
+                    sectionType,
+                    startTime,
+                    rewards,
+                    rewardText == null || rewardText.isBlank() ? null : rewardText
+                ));
+            });
+
+        return List.copyOf(unique.values());
+    }
+
+    private String resolveTodaySectionType(LostArkCalendarSchedule schedule) {
+        String categoryName = normalizeCategoryKey(schedule.categoryName());
+        String contentName = normalizeCategoryKey(schedule.contentsName());
+        String rawContent = normalizeCategoryKey(schedule.rawContent());
+
+        if (matchesTodayCategory(categoryName, contentName, rawContent, "모험섬", "ADVENTUREISLAND")) {
+            return "모험섬";
+        }
+        if (matchesTodayCategory(categoryName, contentName, rawContent, "카오스게이트", "카게", "CHAOSGATE")) {
+            return "카게";
+        }
+        if (matchesTodayCategory(categoryName, contentName, rawContent, "필드보스", "필보", "FIELDBOSS")) {
+            return "필보";
+        }
+        return null;
+    }
+
+    private boolean matchesTodayCategory(String categoryName, String contentsName, String rawContent, String... aliases) {
+        for (String alias : aliases) {
+            String normalizedAlias = normalizeCategoryKey(alias);
+            if (normalizedAlias.isBlank()) {
+                continue;
+            }
+            if (normalizedAlias.equals(categoryName) || normalizedAlias.equals(contentsName) || normalizedAlias.equals(rawContent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeCategoryKey(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim()
+            .replaceAll("[\\s_\\-]", "")
+            .toUpperCase(Locale.ROOT);
+    }
+
+    private String formatShortTime(LocalDateTime dateTime) {
+        return dateTime == null ? null : TIME_FORMATTER.format(dateTime);
     }
 
     private LostArkCalendarSyncResponse syncCalendar(String syncType) {

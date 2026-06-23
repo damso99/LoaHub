@@ -1469,6 +1469,106 @@ select {
   line-height: 1.7;
 }
 
+.calendar-today-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.calendar-today-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+}
+
+.calendar-today-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendar-today-section__eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.calendar-today-section__header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.calendar-today-section__items {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-today-section__empty {
+  padding: 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  line-height: 1.7;
+  text-align: center;
+}
+
+.calendar-today-item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.calendar-today-item__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.calendar-today-item__body {
+  min-width: 0;
+}
+
+.calendar-today-item__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.calendar-today-item__body h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.calendar-today-item__time {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.calendar-today-item__time strong {
+  color: var(--primary);
+}
+
+.calendar-today-item__reward {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
 .calendar-timeline {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1924,6 +2024,19 @@ select {
 @media (max-width: 900px) {
   .signup-layout {
     grid-template-columns: 1fr;
+  }
+
+  .calendar-today-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-today-item__top {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-today-item__time {
+    justify-items: flex-start;
+    text-align: left;
   }
 
   .calendar-timeline {

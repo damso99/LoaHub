@@ -2,6 +2,7 @@ package com.loahub.calendar;
 
 import com.loahub.common.dto.ApiResponse;
 import com.loahub.common.dto.LostArkCalendarDayResponse;
+import com.loahub.common.dto.LostArkCalendarTodayResponse;
 import com.loahub.common.dto.LostArkCalendarWeekResponse;
 import com.loahub.common.service.LostArkCalendarService;
 import java.time.LocalDate;
@@ -23,7 +24,7 @@ public class LostArkCalendarController {
     }
 
     @GetMapping("/today")
-    public ResponseEntity<ApiResponse<LostArkCalendarDayResponse>> today() {
+    public ResponseEntity<ApiResponse<LostArkCalendarTodayResponse>> today() {
         return ResponseEntity.ok(ApiResponse.ok(service.today()));
     }
 

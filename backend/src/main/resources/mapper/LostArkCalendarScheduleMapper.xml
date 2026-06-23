@@ -77,6 +77,15 @@
     ORDER BY slot_hhmm, category_name, start_time_kst
   </select>
 
+  <select id="findActiveByStartTimeRange" resultMap="LostArkCalendarScheduleResultMap">
+    SELECT id, week_start_date, week_end_date, category_name, contents_name, contents_icon, min_item_level, location, start_time_kst, start_date, start_hhmm, slot_hhmm, rewards, raw_content, is_active, created_at, updated_at
+    FROM public.lostark_calendar_schedules
+    WHERE is_active = true
+      AND start_time_kst &gt;= #{startTime}
+      AND start_time_kst &lt; #{endTime}
+    ORDER BY start_time_kst, slot_hhmm, category_name, contents_name
+  </select>
+
   <select id="findActiveWeek" resultMap="LostArkCalendarScheduleResultMap">
     SELECT id, week_start_date, week_end_date, category_name, contents_name, contents_icon, min_item_level, location, start_time_kst, start_date, start_hhmm, slot_hhmm, rewards, raw_content, is_active, created_at, updated_at
     FROM public.lostark_calendar_schedules

@@ -8,25 +8,88 @@ import { PageHeader } from '../components/PageHeader';
 import { useAppState } from '../context/AppStateContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 
-const FIXED_SLOTS = ['11:00', '13:00', '19:00', '21:00', '23:00'];
+const SECTION_CONFIG = [
+  { key: 'adventureIslands', title: '모험섬', tone: 'primary' },
+  { key: 'chaosGates', title: '카게', tone: 'warning' },
+  { key: 'fieldBosses', title: '필보', tone: 'info' },
+];
 
-const CATEGORY_TONE = {
-  '모험 섬': 'primary',
-  필드보스: 'info',
-  카오스게이트: 'warning',
+const normalizeRewardText = (item) => {
+  if (item?.rewardText) {
+    return String(item.rewardText).trim();
+  }
+
+  if (!Array.isArray(item?.rewardItems) || item.rewardItems.length === 0) {
+    return '';
+  }
+
+  return item.rewardItems
+    .map((reward) => reward?.name ?? reward?.Name ?? '')
+    .filter((rewardName) => rewardName.trim().length > 0)
+    .join(', ');
 };
 
-const normalizeScheduleItem = (item) => ({
-  ...item,
-  rewards: Array.isArray(item?.rewards) ? item.rewards : [],
-});
+const formatStartTime = (value) => {
+  const text = String(value ?? '').trim();
+  if (!text) {
+    return '';
+  }
 
-const getCategoryTone = (categoryName) => CATEGORY_TONE[categoryName] ?? 'neutral';
+  if (text.includes('T')) {
+    return text.slice(11, 16);
+  }
+
+  return text.slice(0, 5);
+};
+
+const TodayScheduleCard = ({ title, tone, items }) => {
+  return (
+    <Card className="calendar-today-section">
+      <div className="calendar-today-section__header">
+        <div>
+          <p className="calendar-today-section__eyebrow">오늘 일정</p>
+          <h2>{title}</h2>
+        </div>
+        <Badge tone={tone}>{items.length}개</Badge>
+      </div>
+
+      <div className="calendar-today-section__items">
+        {items.length > 0 ? (
+          items.map((item) => {
+            const rewardText = normalizeRewardText(item);
+
+            return (
+              <article key={item.id} className="calendar-today-item">
+                <div className="calendar-today-item__top">
+                  <div className="calendar-today-item__body">
+                    <div className="calendar-today-item__badges">
+                      <Badge tone={tone}>{item.contentType}</Badge>
+                      <Badge tone="neutral">{formatStartTime(item.startTime)}</Badge>
+                    </div>
+                    <h3>{item.contentName}</h3>
+                  </div>
+
+                  <div className="calendar-today-item__time">
+                    <strong>{formatStartTime(item.startTime)} 시작</strong>
+                  </div>
+                </div>
+
+                {rewardText ? <p className="calendar-today-item__reward">{rewardText}</p> : null}
+              </article>
+            );
+          })
+        ) : (
+          <div className="calendar-today-section__empty">오늘 일정이 없습니다.</div>
+        )}
+      </div>
+    </Card>
+  );
+};
 
 export const CalendarPage = () => {
   const { notifications, setNotifications } = useAppState();
   const { requireLogin } = useAuthGuard();
-  const [calendarDay, setCalendarDay] = useState(null);
+  const [calendarToday, setCalendarToday] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -37,14 +100,14 @@ export const CalendarPage = () => {
     try {
       const response = await api.getLostArkCalendarToday();
       const payload = response?.data?.data ?? response?.data ?? {};
-      setCalendarDay(payload);
+      setCalendarToday(payload);
     } catch (error) {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.detail ||
         error?.message ||
         '캘린더 데이터를 불러오지 못했습니다.';
-      setCalendarDay(null);
+      setCalendarToday(null);
       setErrorMessage(message);
     } finally {
       setLoading(false);
@@ -55,14 +118,12 @@ export const CalendarPage = () => {
     void loadCalendar();
   }, [loadCalendar]);
 
-  const slotGroups = useMemo(() => {
-    const grouped = new Map((calendarDay?.groups ?? []).map((group) => [group.slotHhmm, group.items ?? []]));
-
-    return FIXED_SLOTS.map((slotHhmm) => ({
-      slotHhmm,
-      items: (grouped.get(slotHhmm) ?? []).map(normalizeScheduleItem),
+  const sectionData = useMemo(() => {
+    return SECTION_CONFIG.map((section) => ({
+      ...section,
+      items: Array.isArray(calendarToday?.[section.key]) ? calendarToday[section.key] : [],
     }));
-  }, [calendarDay]);
+  }, [calendarToday]);
 
   const toggleNotification = (id) => {
     if (!requireLogin()) {
@@ -77,8 +138,8 @@ export const CalendarPage = () => {
   return (
     <div className="page-stack calendar-page">
       <PageHeader
-        title="로스트아크 캘린더"
-        description="백엔드에 저장된 주간 캐시에서 오늘 일정만 읽어와 11:00, 13:00, 19:00, 21:00, 23:00 타임라인으로 보여줍니다."
+        title="로스트아크 오늘 일정"
+        description="Supabase에 저장된 캐시를 읽어 오늘자 모험섬, 카게, 필보 일정을 보여줍니다."
         action={<Button variant="secondary" onClick={() => void loadCalendar()}>새로고침</Button>}
       />
 
@@ -86,76 +147,28 @@ export const CalendarPage = () => {
         <div className="section-card__header calendar-page__meta">
           <div>
             <h2>오늘 기준 일정</h2>
-            <p>{calendarDay?.date ? `${calendarDay.date} KST` : '날짜를 불러오는 중입니다.'}</p>
+            <p>로스트아크 기준 06:00부터 다음날 05:59:59까지의 데이터를 표시합니다.</p>
           </div>
-          <Badge tone="primary">11:00 / 13:00 / 19:00 / 21:00 / 23:00</Badge>
+          <Badge tone="primary">모험섬 / 카게 / 필보</Badge>
         </div>
-        <p className="calendar-page__summary">
-          카오스게이트는 실제 시작 시간이 11:50, 13:50, 19:50, 21:50, 23:50인 항목을 사용하고, 화면에서는 대응하는 정각 타임라인에 넣습니다.
-        </p>
       </Card>
 
       {loading ? (
         <Card className="loading-state">
           <h2 className="loading-state__title">캘린더를 불러오는 중입니다.</h2>
-          <p className="loading-state__desc">Supabase 캐시에서 오늘 로스트아크 일정을 읽고 있습니다.</p>
+          <p className="loading-state__desc">DB에 저장된 오늘 로스트아크 일정을 읽고 있습니다.</p>
         </Card>
       ) : errorMessage ? (
         <EmptyState title="캘린더 조회 실패" description={errorMessage} />
       ) : (
-        <section className="calendar-timeline">
-          {slotGroups.map((group) => (
-            <Card key={group.slotHhmm} className="calendar-slot">
-              <div className="calendar-slot__header">
-                <div>
-                  <p className="calendar-slot__eyebrow">타임라인</p>
-                  <h2>{group.slotHhmm}</h2>
-                </div>
-                <Badge tone={group.items.length > 0 ? 'info' : 'neutral'}>{group.items.length}개</Badge>
-              </div>
-
-              <div className="calendar-slot__items">
-                {group.items.length > 0 ? (
-                  group.items.map((item) => (
-                    <article key={`${item.categoryName}-${item.contentsName}-${item.startTimeKst}`} className="calendar-event">
-                      <div className="calendar-event__top">
-                        {item.contentsIcon ? (
-                          <img className="calendar-event__icon" src={item.contentsIcon} alt={item.contentsName} />
-                        ) : (
-                          <div className="calendar-event__icon calendar-event__icon--placeholder" />
-                        )}
-
-                        <div className="calendar-event__body">
-                          <div className="calendar-event__badges">
-                            <Badge tone={getCategoryTone(item.categoryName)}>{item.categoryName}</Badge>
-                            <Badge tone="neutral">{item.slotHhmm}</Badge>
-                          </div>
-                          <h3>{item.contentsName}</h3>
-                          <p>{item.location || '지역 정보 없음'}</p>
-                        </div>
-
-                        <div className="calendar-event__time">
-                          <strong>{item.startHhmm} 시작</strong>
-                          {item.minItemLevel ? <span>최소 {item.minItemLevel}</span> : null}
-                        </div>
-                      </div>
-
-                      {item.rewards.length > 0 ? (
-                        <div className="calendar-event__rewards">
-                          {item.rewards.map((reward) => (
-                            <Badge key={`${reward.name}-${reward.grade}-${reward.icon}`} tone="warning">
-                              {reward.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : null}
-                    </article>
-                  ))
-                ) : (
-                  <div className="calendar-slot__empty">해당 시간대 일정이 없습니다.</div>
-                )}
-              </div>
-            </Card>
+        <section className="calendar-today-grid">
+          {sectionData.map((section) => (
+            <TodayScheduleCard
+              key={section.key}
+              title={section.title}
+              tone={section.tone}
+              items={section.items}
+            />
           ))}
         </section>
       )}
