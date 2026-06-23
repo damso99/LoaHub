@@ -4,23 +4,25 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.loahub.common.mapper.LostArkCalendarScheduleMapper">
   <resultMap id="LostArkCalendarScheduleResultMap" type="com.loahub.common.model.DomainModels$LostArkCalendarSchedule">
-    <id column="id" property="id" />
-    <result column="week_start_date" property="weekStartDate" />
-    <result column="week_end_date" property="weekEndDate" />
-    <result column="category_name" property="categoryName" />
-    <result column="contents_name" property="contentsName" />
-    <result column="contents_icon" property="contentsIcon" />
-    <result column="min_item_level" property="minItemLevel" />
-    <result column="location" property="location" />
-    <result column="start_time_kst" property="startTimeKst" />
-    <result column="start_date" property="startDate" />
-    <result column="start_hhmm" property="startHhmm" />
-    <result column="slot_hhmm" property="slotHhmm" />
-    <result column="rewards" property="rewards" />
-    <result column="raw_content" property="rawContent" />
-    <result column="is_active" property="isActive" />
-    <result column="created_at" property="createdAt" />
-    <result column="updated_at" property="updatedAt" />
+    <constructor>
+      <idArg column="id" javaType="string" />
+      <arg column="week_start_date" javaType="java.time.LocalDate" />
+      <arg column="week_end_date" javaType="java.time.LocalDate" />
+      <arg column="category_name" javaType="string" />
+      <arg column="contents_name" javaType="string" />
+      <arg column="contents_icon" javaType="string" />
+      <arg column="min_item_level" javaType="java.lang.Integer" />
+      <arg column="location" javaType="string" />
+      <arg column="start_time_kst" javaType="java.time.LocalDateTime" />
+      <arg column="start_date" javaType="java.time.LocalDate" />
+      <arg column="start_hhmm" javaType="string" />
+      <arg column="slot_hhmm" javaType="string" />
+      <arg column="rewards" javaType="string" />
+      <arg column="raw_content" javaType="string" />
+      <arg column="is_active" javaType="boolean" />
+      <arg column="created_at" javaType="java.time.OffsetDateTime" />
+      <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+    </constructor>
   </resultMap>
 
   <delete id="deleteByWeekRange">
