@@ -40,7 +40,9 @@ export const api = {
     });
   },
   async getLostArkCalendarToday() {
-    return apiClient.get('/api/lostark/calendar/today');
+    return apiClient.get('/api/lostark/calendar/today', {
+      timeout: 30000,
+    });
   },
   async getLostArkCalendarWeek() {
     return { data: { data: await getLostArkCalendarWeek() } };

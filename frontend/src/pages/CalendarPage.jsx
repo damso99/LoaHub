@@ -102,7 +102,13 @@ export const CalendarPage = () => {
       const payload = response?.data?.data ?? response?.data ?? {};
       setCalendarToday(payload);
     } catch (error) {
+      const isTimeout =
+        error?.code === 'ECONNABORTED' ||
+        String(error?.message ?? '').toLowerCase().includes('timeout');
       const message =
+        (isTimeout
+          ? '검색 시간이 초과되었습니다. 서버가 준비 중일 수 있으니 잠시 후 다시 시도해 주세요.'
+          : null) ||
         error?.response?.data?.message ||
         error?.response?.data?.detail ||
         error?.message ||
