@@ -19,6 +19,14 @@ mybatis:
   type-aliases-package: com.loahub
   configuration:
     map-underscore-to-camel-case: true
+    default-statement-timeout: 30
+
+loahub:
+  lostark:
+    connect-timeout-ms: 15000
+    read-timeout-ms: 60000
+  calendar:
+    query-timeout-seconds: 30
 
 jwt:
   secret: ${JWT_SECRET:}

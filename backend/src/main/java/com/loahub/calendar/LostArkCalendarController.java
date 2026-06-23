@@ -28,6 +28,13 @@ public class LostArkCalendarController {
         return ResponseEntity.ok(ApiResponse.ok(service.today()));
     }
 
+    @GetMapping("/daily")
+    public ResponseEntity<ApiResponse<LostArkCalendarTodayResponse>> daily(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(service.daily(date)));
+    }
+
     @GetMapping("/week")
     public ResponseEntity<ApiResponse<LostArkCalendarWeekResponse>> week() {
         return ResponseEntity.ok(ApiResponse.ok(service.week()));

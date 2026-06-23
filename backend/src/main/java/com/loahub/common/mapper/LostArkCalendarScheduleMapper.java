@@ -18,7 +18,10 @@ public interface LostArkCalendarScheduleMapper {
         @Param("endTime") LocalDateTime endTime
     );
 
-    List<LostArkCalendarSchedule> findActiveByDate(@Param("date") LocalDate date);
+    List<LostArkCalendarSchedule> findActiveByDateRange(
+        @Param("startDateTime") LocalDateTime startDateTime,
+        @Param("endDateTime") LocalDateTime endDateTime
+    );
 
     List<LostArkCalendarSchedule> findActiveWeek();
 }

@@ -1502,12 +1502,15 @@ select {
   justify-items: center;
   gap: 6px;
   min-width: 82px;
+  min-height: 0;
   padding: 12px 10px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(148, 163, 184, 0.1);
   color: var(--text-muted);
   text-align: center;
+  cursor: pointer;
+  appearance: none;
 }
 
 .calendar-week-pill__day {
@@ -1524,6 +1527,12 @@ select {
   color: #ffffff;
   border-color: rgba(132, 105, 255, 0.24);
   box-shadow: 0 14px 30px rgba(98, 72, 224, 0.24);
+}
+
+.calendar-week-pill.is-selected:not(.is-today) {
+  background: rgba(124, 184, 255, 0.14);
+  border-color: rgba(124, 184, 255, 0.28);
+  color: var(--text-main);
 }
 
 .calendar-week-pill.is-saturday {
@@ -1544,6 +1553,9 @@ select {
 }
 
 .calendar-loading-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   gap: 12px;
 }
 
@@ -1558,6 +1570,8 @@ select {
 .calendar-loading-line,
 .calendar-loading-chip {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   background: rgba(148, 163, 184, 0.12);
 }
@@ -1575,34 +1589,42 @@ select {
 }
 
 .calendar-loading-pill {
-  width: 88px;
+  width: clamp(56px, 24vw, 88px);
+  max-width: 100%;
   height: 28px;
   border-radius: 999px;
 }
 
 .calendar-loading-line {
   width: 100%;
+  max-width: 100%;
   height: 16px;
   border-radius: 999px;
 }
 
 .calendar-loading-line--short {
-  width: 66%;
+  width: min(66%, 180px);
 }
 
 .calendar-loading-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .calendar-loading-chip {
-  width: 34px;
+  width: clamp(28px, 8vw, 34px);
+  max-width: 100%;
   height: 34px;
   border-radius: 10px;
 }
 
 .calendar-today-skeleton {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -1620,7 +1642,10 @@ select {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
   min-height: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .calendar-today-section__header {
@@ -1628,6 +1653,7 @@ select {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .calendar-today-section__title-wrap {
@@ -1635,6 +1661,7 @@ select {
   align-items: center;
   gap: 12px;
   min-width: 0;
+  max-width: calc(100% - 96px);
 }
 
 .calendar-today-section__icon {
@@ -1676,6 +1703,7 @@ select {
 .calendar-today-section__items {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .calendar-today-section__empty {
@@ -1697,14 +1725,18 @@ select {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 14, 24, 0.96));
   border: 1px solid rgba(148, 163, 184, 0.09);
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .calendar-today-item__media {
   min-width: 0;
+  max-width: 100%;
 }
 
 .calendar-today-item__image {
-  width: 94px;
+  width: 100%;
+  max-width: 94px;
   height: 94px;
   border-radius: 18px;
   object-fit: cover;
@@ -1722,6 +1754,7 @@ select {
   display: grid;
   gap: 10px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .calendar-today-item__topline {
@@ -1729,6 +1762,8 @@ select {
   justify-content: space-between;
   gap: 10px;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .calendar-today-item__body h3 {
@@ -1753,8 +1788,11 @@ select {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 2px;
   scrollbar-width: thin;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .calendar-today-item__reward {
@@ -2249,6 +2287,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .calendar-today-section {
+    min-height: auto;
+  }
+
   .calendar-event__top {
     grid-template-columns: 1fr;
     align-items: flex-start;
@@ -2306,6 +2348,7 @@ select {
 
   .calendar-today-item__image {
     width: 100%;
+    max-width: 100%;
     height: 180px;
   }
 

@@ -6,10 +6,6 @@ import {
   postsSeed,
   profileSeed,
 } from '../data/mockData';
-import {
-  getLostArkCalendarDate,
-  getLostArkCalendarWeek,
-} from './lostarkCalendarApi';
 import { marketItemsSeed } from '../data/marketMockData';
 import { readStorage } from '../utils/storage';
 
@@ -18,7 +14,7 @@ const useMock = import.meta.env.DEV && String(import.meta.env.VITE_USE_MOCK_API 
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -45,10 +41,15 @@ export const api = {
     });
   },
   async getLostArkCalendarWeek() {
-    return { data: { data: await getLostArkCalendarWeek() } };
+    return apiClient.get('/api/lostark/calendar/week', {
+      timeout: 30000,
+    });
   },
   async getLostArkCalendarDate(date) {
-    return { data: { data: await getLostArkCalendarDate(date) } };
+    return apiClient.get('/api/lostark/calendar/daily', {
+      params: { date },
+      timeout: 30000,
+    });
   },
   async setMainCharacter(characterName) {
     return apiClient.post('/api/users/me/main-character', {
@@ -198,7 +199,9 @@ export const api = {
     return delay({ data: { post, comments } });
   },
   async getCalendarContents() {
-    return { data: { data: await getLostArkCalendarWeek() } };
+    return apiClient.get('/api/lostark/calendar/week', {
+      timeout: 30000,
+    });
   },
   async getMessages() {
     if (!useMock) {

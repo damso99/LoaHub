@@ -28,20 +28,22 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class LostArkCalendarClient {
     private static final String BASE_URL = "https://developer-lostark.game.onstove.com";
-    private static final int CONNECT_TIMEOUT_MS = 5000;
-    private static final int READ_TIMEOUT_MS = 20000;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final String apiKey;
 
-    public LostArkCalendarClient(@Value("${lostark.api.key:}") String apiKey) {
+    public LostArkCalendarClient(
+        @Value("${lostark.api.key:}") String apiKey,
+        @Value("${loahub.lostark.connect-timeout-ms:15000}") int connectTimeoutMs,
+        @Value("${loahub.lostark.read-timeout-ms:60000}") int readTimeoutMs
+    ) {
         this.objectMapper = new ObjectMapper();
         this.apiKey = apiKey == null ? "" : apiKey.trim();
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        requestFactory.setReadTimeout(READ_TIMEOUT_MS);
+        requestFactory.setConnectTimeout(connectTimeoutMs);
+        requestFactory.setReadTimeout(readTimeoutMs);
         this.restTemplate = new RestTemplate(requestFactory);
     }
 

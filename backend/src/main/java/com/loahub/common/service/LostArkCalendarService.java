@@ -88,20 +88,13 @@ public class LostArkCalendarService {
     }
 
     public LostArkCalendarTodayResponse today() {
-        ZoneId zoneId = ZoneId.of("Asia/Seoul");
-        LocalDateTime now = LocalDateTime.now(zoneId);
-        LocalDate baseDate = now.toLocalDate();
-        LocalDateTime startTime = now.toLocalTime().isBefore(LocalTime.of(6, 0))
-            ? baseDate.minusDays(1).atTime(6, 0)
-            : baseDate.atTime(6, 0);
-        LocalDateTime endTime = startTime.plusDays(1);
+        DateRange range = resolveTodayRange();
+        return buildTodayResponse(range.startDateTime(), range.endDateTime());
+    }
 
-        List<LostArkCalendarSchedule> schedules = scheduleMapper.findActiveByStartTimeRange(startTime, endTime);
-        return new LostArkCalendarTodayResponse(
-            buildTodaySection(schedules, "모험섬"),
-            buildTodaySection(schedules, "카게"),
-            buildTodaySection(schedules, "필보")
-        );
+    public LostArkCalendarTodayResponse daily(LocalDate date) {
+        DateRange range = resolveDateRange(date);
+        return buildTodayResponse(range.startDateTime(), range.endDateTime());
     }
 
     public LostArkCalendarWeekResponse week() {
@@ -138,7 +131,17 @@ public class LostArkCalendarService {
     }
 
     public LostArkCalendarDayResponse date(LocalDate date) {
-        return buildDayResponse(date, scheduleMapper.findActiveByDate(date));
+        DateRange range = resolveDateRange(date);
+        return buildDayResponse(date, scheduleMapper.findActiveByDateRange(range.startDateTime(), range.endDateTime()));
+    }
+
+    private LostArkCalendarTodayResponse buildTodayResponse(LocalDateTime startTime, LocalDateTime endTime) {
+        List<LostArkCalendarSchedule> schedules = scheduleMapper.findActiveByStartTimeRange(startTime, endTime);
+        return new LostArkCalendarTodayResponse(
+            buildTodaySection(schedules, "모험섬"),
+            buildTodaySection(schedules, "필보"),
+            buildTodaySection(schedules, "카게")
+        );
     }
 
     private List<LostArkCalendarTodayItemResponse> buildTodaySection(List<LostArkCalendarSchedule> schedules, String sectionType) {
@@ -396,6 +399,21 @@ public class LostArkCalendarService {
         return new LostArkCalendarDayResponse(formatDate(date), groups);
     }
 
+    private DateRange resolveTodayRange() {
+        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+        LocalDateTime now = LocalDateTime.now(zoneId);
+        LocalDate baseDate = now.toLocalDate();
+        LocalDate targetDate = now.toLocalTime().isBefore(LocalTime.of(6, 0))
+            ? baseDate.minusDays(1)
+            : baseDate;
+        return resolveDateRange(targetDate);
+    }
+
+    private DateRange resolveDateRange(LocalDate date) {
+        LocalDate normalizedDate = date == null ? LocalDate.now(ZoneId.of("Asia/Seoul")) : date;
+        return new DateRange(normalizedDate.atTime(6, 0), normalizedDate.plusDays(1).atTime(6, 0));
+    }
+
     private List<LostArkCalendarSchedule> filterByDate(List<LostArkCalendarSchedule> schedules, LocalDate date) {
         return schedules.stream()
             .filter(schedule -> date.equals(schedule.startDate()))
@@ -516,6 +534,12 @@ public class LostArkCalendarService {
         int filteredCount,
         int savedCount,
         List<LostArkCalendarSchedule> schedules
+    ) {
+    }
+
+    private record DateRange(
+        LocalDateTime startDateTime,
+        LocalDateTime endDateTime
     ) {
     }
 }

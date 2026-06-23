@@ -115,19 +115,24 @@ const getSectionCountdown = (items, now) => {
 export const CalendarPage = () => {
   const { notifications, setNotifications } = useAppState();
   const { requireLogin } = useAuthGuard();
+  const todayKey = useMemo(() => getKstDateParts().dateKey, []);
   const [calendarToday, setCalendarToday] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(todayKey);
   const [loading, setLoading] = useState(true);
   const [showSlowLoadingHint, setShowSlowLoadingHint] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [nowTick, setNowTick] = useState(() => new Date());
 
-  const loadCalendar = useCallback(async () => {
+  const loadCalendar = useCallback(async (dateKey = todayKey) => {
     setLoading(true);
     setErrorMessage('');
     setShowSlowLoadingHint(false);
 
     try {
-      const response = await api.getLostArkCalendarToday();
+      const response =
+        dateKey === todayKey
+          ? await api.getLostArkCalendarToday()
+          : await api.getLostArkCalendarDate(dateKey);
       const payload = response?.data?.data ?? response?.data ?? {};
       setCalendarToday(payload);
     } catch (error) {
@@ -147,11 +152,11 @@ export const CalendarPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [todayKey]);
 
   useEffect(() => {
-    void loadCalendar();
-  }, [loadCalendar]);
+    void loadCalendar(selectedDate);
+  }, [loadCalendar, selectedDate]);
 
   useEffect(() => {
     if (!loading) {
@@ -189,6 +194,10 @@ export const CalendarPage = () => {
     );
   };
 
+  const handleSelectDate = (dateKey) => {
+    setSelectedDate(dateKey);
+  };
+
   return (
     <div className="page-stack calendar-page">
       <PageHeader
@@ -203,24 +212,27 @@ export const CalendarPage = () => {
             <h2>이번 주 날짜</h2>
             <p>오늘 날짜를 보라색으로 강조했습니다.</p>
           </div>
-          <Badge tone="primary">{calendarToday?.date ?? getKstDateParts().dateKey}</Badge>
+          <Badge tone="primary">{selectedDate}</Badge>
         </div>
 
         <div className="calendar-week-bar" role="list" aria-label="이번 주 날짜 선택 바">
           {weekDays.map((day) => (
-            <div
+            <button
               key={day.dateKey}
+              type="button"
               role="listitem"
               className={[
                 'calendar-week-pill',
                 day.isToday ? 'is-today' : '',
+                selectedDate === day.dateKey ? 'is-selected' : '',
                 day.isSaturday ? 'is-saturday' : '',
                 day.isSunday ? 'is-sunday' : '',
               ].join(' ')}
+              onClick={() => handleSelectDate(day.dateKey)}
             >
               <span className="calendar-week-pill__day">{day.dayLabel}</span>
               <strong className="calendar-week-pill__date">{day.dayNumber}</strong>
-            </div>
+            </button>
           ))}
         </div>
       </Card>
