@@ -24,7 +24,7 @@ supabase secrets set LOSTARK_API_KEY=YOUR_LOSTARK_API_KEY
 ## 3. Edge Function 배포
 
 ```bash
-supabase functions deploy sync-lostark-calendar
+supabase functions deploy sync-lostark-calendar --no-verify-jwt
 ```
 
 로컬에서 먼저 확인하려면:

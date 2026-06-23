@@ -12,10 +12,9 @@ select cron.schedule(
   $$
     select
       net.http_post(
-        url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/sync-lostark-calendar',
+        url := 'https://sqiyxrtuhgvhbwsyyevx.supabase.co/functions/v1/sync-lostark-calendar',
         headers := jsonb_build_object(
-          'Content-Type', 'application/json',
-          'Authorization', 'Bearer YOUR_EDGE_FUNCTION_SECRET'
+          'Content-Type', 'application/json'
         ),
         body := '{}'::jsonb
       );
