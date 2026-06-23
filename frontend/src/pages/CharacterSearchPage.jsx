@@ -127,7 +127,7 @@ export const CharacterSearchPage = () => {
                 if (!requireLogin()) {
                   return;
                 }
-                setMainCharacter(nextCharacter);
+                void setMainCharacter(nextCharacter);
               }}
               onTrack={() => undefined}
             />

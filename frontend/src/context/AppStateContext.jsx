@@ -161,7 +161,7 @@ export const AppStateProvider = ({ children }) => {
           setUser(null);
           setProfile(profileSeed);
         },
-        setMainCharacter: (character) => {
+        setMainCharacter: async (character) => {
           setProfile((current) => ({
             ...current,
             mainCharacterName: character.characterName,
@@ -178,6 +178,20 @@ export const AppStateProvider = ({ children }) => {
               isMain: item.characterName === character.characterName,
             })),
           );
+
+          try {
+            const response = await api.setMainCharacter(character.characterName);
+            const payload = response?.data?.data ?? response?.data ?? {};
+
+            if (payload.profile) {
+              setProfile((current) => ({
+                ...current,
+                ...payload.profile,
+              }));
+            }
+          } catch (error) {
+            console.error('대표 캐릭터 저장에 실패했습니다.', error);
+          }
         },
         toggleMerchantFavorite: (merchantId) => {
           setMerchants((current) =>

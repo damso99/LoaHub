@@ -36,6 +36,11 @@ export const api = {
       timeout: 30000,
     });
   },
+  async setMainCharacter(characterName) {
+    return apiClient.post('/api/users/me/main-character', {
+      characterName: String(characterName ?? '').trim(),
+    });
+  },
   async searchMarketItems(keyword) {
     const normalized = String(keyword ?? '').trim();
     if (useMock) {
