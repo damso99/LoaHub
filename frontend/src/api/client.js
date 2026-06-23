@@ -7,6 +7,7 @@ import {
   postsSeed,
   profileSeed,
 } from '../data/mockData';
+import { marketItemsSeed } from '../data/marketMockData';
 import { readStorage } from '../utils/storage';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -34,6 +35,93 @@ export const api = {
     return apiClient.get(`/api/lostark/characters/${encodedCharacterName}`, {
       timeout: 30000,
     });
+  },
+  async searchMarketItems(keyword) {
+    const normalized = String(keyword ?? '').trim();
+    if (useMock) {
+      const lower = normalized.toLowerCase();
+      return delay({
+        data: marketItemsSeed.filter((item) => item.itemName.toLowerCase().includes(lower)),
+      });
+    }
+
+    return apiClient.get('/api/lostark/markets/search', {
+      params: { keyword: normalized },
+      timeout: 30000,
+    });
+  },
+  async getMerchants(region) {
+    if (useMock) {
+      const normalized = String(region ?? '').trim();
+      const filtered = normalized
+        ? merchantsSeed.filter((item) => item.region.includes(normalized))
+        : merchantsSeed;
+
+      return delay({ data: clone(filtered) });
+    }
+
+    return apiClient.get('/api/merchants', {
+      params: region ? { region } : undefined,
+    });
+  },
+  async getCurrentMerchants(region) {
+    if (useMock) {
+      const current = merchantsSeed.filter((item) => item.spawnTime.includes('18:00'));
+      const filtered = region ? current.filter((item) => item.region.includes(region)) : current;
+      return delay({ data: clone(filtered) });
+    }
+
+    return apiClient.get('/api/merchants/current', {
+      params: region ? { region } : undefined,
+    });
+  },
+  async searchMerchants(keyword) {
+    if (useMock) {
+      const lower = String(keyword ?? '').trim().toLowerCase();
+      return delay({
+        data: clone(
+          merchantsSeed.filter(
+            (item) =>
+              item.region.toLowerCase().includes(lower) ||
+              item.merchantName.toLowerCase().includes(lower) ||
+              item.description.toLowerCase().includes(lower) ||
+              item.items.some((entry) => entry.toLowerCase().includes(lower)),
+          ),
+        ),
+      });
+    }
+
+    return apiClient.get('/api/merchants/search', {
+      params: { keyword },
+    });
+  },
+  async getMerchant(id) {
+    if (useMock) {
+      const merchant = merchantsSeed.find((item) => String(item.id) === String(id)) ?? merchantsSeed[0];
+      return delay({ data: clone(merchant) });
+    }
+
+    return apiClient.get(`/api/merchants/${id}`);
+  },
+  async favoriteMerchant(id) {
+    if (useMock) {
+      const merchant = merchantsSeed.find((item) => String(item.id) === String(id));
+      return delay({
+        data: merchant ? { ...clone(merchant), favorite: true } : null,
+      });
+    }
+
+    return apiClient.post(`/api/merchants/${id}/favorite`);
+  },
+  async unfavoriteMerchant(id) {
+    if (useMock) {
+      const merchant = merchantsSeed.find((item) => String(item.id) === String(id));
+      return delay({
+        data: merchant ? { ...clone(merchant), favorite: false } : null,
+      });
+    }
+
+    return apiClient.delete(`/api/merchants/${id}/favorite`);
   },
   async getMe() {
     if (!useMock) {
@@ -100,17 +188,6 @@ export const api = {
     }
 
     return delay({ data: clone(calendarContents) });
-  },
-  async getMerchants() {
-    if (!useMock) {
-      try {
-        return await apiClient.get('/api/merchants');
-      } catch {
-        // fallback to mock data in local development
-      }
-    }
-
-    return delay({ data: clone(merchantsSeed) });
   },
   async getMessages() {
     if (!useMock) {

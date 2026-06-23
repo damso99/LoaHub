@@ -8,6 +8,7 @@ import { AdminPage } from '../pages/AdminPage';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
 import { MerchantPage } from '../pages/MerchantPage';
+import { MarketPage } from '../pages/MarketPage';
 import { MessageDetailPage } from '../pages/MessageDetailPage';
 import { MessagesPage } from '../pages/MessagesPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
@@ -35,6 +36,7 @@ export const AppRoutes = () => {
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/merchant" element={<MerchantPage />} />
+        <Route path="/market" element={<MarketPage />} />
         <Route path="/boards" element={<Navigate to="/boards/free" replace />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/write" element={<WritePage />} />

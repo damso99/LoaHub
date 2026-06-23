@@ -819,9 +819,10 @@ select {
 }
 
 .signup-card {
-  width: 100%;
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
+  width: min(1120px, calc(100% - 32px));
+  min-height: 720px;
   padding: 0;
   overflow: hidden;
   border-radius: 28px;
@@ -845,6 +846,7 @@ select {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   min-height: 720px;
+  align-items: stretch;
 }
 
 .signup-copy {
@@ -853,6 +855,7 @@ select {
   flex-direction: column;
   justify-content: flex-start;
   gap: 22px;
+  min-width: 0;
   padding: 48px;
   border-right: 1px solid rgba(148, 163, 184, 0.12);
   background:
@@ -964,6 +967,7 @@ select {
   flex-direction: column;
   justify-content: center;
   gap: 22px;
+  min-width: 0;
   padding: 48px;
   background:
     linear-gradient(180deg, rgba(22, 30, 48, 0.98), rgba(16, 21, 34, 0.98)),
@@ -992,24 +996,33 @@ select {
 
 .signup-form {
   width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   padding: 0;
   gap: 16px;
 }
 
 .email-check-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   gap: 12px;
-  align-items: end;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .email-check-row .field {
   min-width: 0;
+  flex: 1;
 }
 
-.email-check-row .button {
+.email-check-button {
+  flex: 0 0 140px;
   min-height: 52px;
   white-space: nowrap;
+}
+
+.signup-form__alert-area {
+  min-height: 56px;
+  width: 100%;
 }
 
 .signup-actions {
@@ -1056,6 +1069,8 @@ select {
 }
 
 .auth-message {
+  width: 100%;
+  box-sizing: border-box;
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid transparent;
@@ -1076,6 +1091,11 @@ select {
 
 .form-footnote {
   margin: 0;
+}
+
+.field-hint {
+  min-height: 20px;
+  line-height: 1.4;
 }
 
 .hero-actions,
@@ -1314,6 +1334,25 @@ select {
   gap: 12px;
 }
 
+.merchant-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.section-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.section-stack__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .merchant-card,
 .calendar-card,
 .message-item,
@@ -1329,6 +1368,10 @@ select {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.merchant-card__heading {
+  min-width: 0;
 }
 
 .merchant-tag {
@@ -1353,6 +1396,55 @@ select {
 
 .merchant-card__action {
   align-self: flex-start;
+}
+
+.market-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.market-card__top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.market-card__icon {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 184, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.market-card__heading {
+  min-width: 0;
+}
+
+.market-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.market-card__stats div {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.market-card__stats dt {
+  margin-bottom: 6px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.market-card__stats dd {
+  margin: 0;
+  font-weight: 700;
 }
 
 .calendar-card__eyebrow {
@@ -1703,6 +1795,22 @@ select {
   }
 }
 
+@media (max-width: 900px) {
+  .signup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .signup-copy {
+    border-right: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    padding: 36px 32px;
+  }
+
+  .signup-form-panel {
+    padding: 36px 32px 40px;
+  }
+}
+
 @media (max-width: 768px) {
   .topbar {
     padding: 0 16px;
@@ -1738,20 +1846,6 @@ select {
     align-items: flex-start;
   }
 
-  .signup-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .signup-copy {
-    border-right: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    padding: 32px 28px;
-  }
-
-  .signup-form-panel {
-    padding: 32px 28px 34px;
-  }
-
   .signup-copy h1 {
     font-size: clamp(1.55rem, 6.4vw, 2.2rem);
   }
@@ -1761,6 +1855,10 @@ select {
   }
 
   .hero-search {
+    grid-template-columns: 1fr;
+  }
+
+  .merchant-filters {
     grid-template-columns: 1fr;
   }
 
@@ -1837,8 +1935,8 @@ select {
     width: 100%;
   }
 
-  .email-check-row {
-    grid-template-columns: 1fr;
+  .signup-card {
+    width: calc(100% - 24px);
   }
 
   .hero-footer,
@@ -1873,5 +1971,20 @@ select {
   .chip-scroll,
   .notification-list {
     gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .email-check-row {
+    flex-direction: column;
+  }
+
+  .email-check-button {
+    width: 100%;
+    flex: none;
+  }
+
+  .market-card__stats {
+    grid-template-columns: 1fr;
   }
 }

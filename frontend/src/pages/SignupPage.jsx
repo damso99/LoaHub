@@ -7,6 +7,52 @@ import { Input } from '../components/Input';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const text = {
+  brand: 'LOAHUB',
+  introTitle: 'Build your',
+  introSubtitle: 'Lost Ark character hub',
+  introDescription:
+    'Manage character info, boards, and content schedules in one place with only the features you need.',
+  introList: [
+    'Safe sign-up with email verification',
+    'Access to free and class boards',
+    'Lost Ark content schedule checks',
+    'Continue after email duplicate check',
+  ],
+  introNote: 'After sign-up, you can register a character and start using the main LoaHub features.',
+  formEyebrow: 'Account info',
+  formTitle: 'LoaHub Sign Up',
+  formDescription: 'Create an account with your email and nickname, then continue with character setup.',
+  emailLabel: 'Email',
+  emailPlaceholder: 'example@loahub.com',
+  emailCheckButton: 'Check email',
+  emailCheckLoading: 'Checking...',
+  passwordLabel: 'Password',
+  passwordPlaceholder: 'At least 8 characters',
+  passwordConfirmLabel: 'Confirm password',
+  passwordConfirmPlaceholder: 'Re-enter your password',
+  nicknameLabel: 'Nickname',
+  nicknamePlaceholder: '2-12 characters',
+  signupButton: 'Sign up',
+  signupButtonLoading: 'Signing up...',
+  loginLinkPrefix: 'Already have a LoaHub account?',
+  loginLink: 'Go to login',
+  validation: {
+    emailRequired: 'Please enter your email.',
+    emailInvalid: 'Please enter a valid email address.',
+    passwordRequired: 'Please enter your password.',
+    passwordLength: 'Password must be at least 8 characters.',
+    passwordConfirmRequired: 'Please confirm your password.',
+    passwordMismatch: 'Passwords do not match.',
+    nicknameRequired: 'Please enter a nickname.',
+    nicknameLength: 'Nickname must be 2-12 characters.',
+    emailCheckRequired: 'Please check your email duplicate status first.',
+    emailCheckFailed: 'Email duplicate check failed. Please try again.',
+    nicknameDuplicate: 'This nickname is already in use.',
+    signupFailed: 'Sign up failed. Please try again later.',
+  },
+};
+
 const initialForm = {
   email: '',
   password: '',
@@ -43,27 +89,27 @@ export const SignupPage = () => {
     const nickname = form.nickname.trim();
 
     if (!email) {
-      nextErrors.email = '이메일을 입력해 주세요.';
+      nextErrors.email = text.validation.emailRequired;
     } else if (!emailPattern.test(email)) {
-      nextErrors.email = '이메일 형식이 올바르지 않습니다.';
+      nextErrors.email = text.validation.emailInvalid;
     }
 
     if (!form.password) {
-      nextErrors.password = '비밀번호를 입력해 주세요.';
+      nextErrors.password = text.validation.passwordRequired;
     } else if (form.password.length < 8) {
-      nextErrors.password = '비밀번호는 최소 8자 이상이어야 합니다.';
+      nextErrors.password = text.validation.passwordLength;
     }
 
     if (!form.passwordConfirm) {
-      nextErrors.passwordConfirm = '비밀번호 확인을 입력해 주세요.';
+      nextErrors.passwordConfirm = text.validation.passwordConfirmRequired;
     } else if (form.password !== form.passwordConfirm) {
-      nextErrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';
+      nextErrors.passwordConfirm = text.validation.passwordMismatch;
     }
 
     if (!nickname) {
-      nextErrors.nickname = '닉네임을 입력해 주세요.';
+      nextErrors.nickname = text.validation.nicknameRequired;
     } else if (nickname.length < 2 || nickname.length > 12) {
-      nextErrors.nickname = '닉네임은 2~12자 사이로 입력해 주세요.';
+      nextErrors.nickname = text.validation.nicknameLength;
     }
 
     return nextErrors;
@@ -73,12 +119,12 @@ export const SignupPage = () => {
     const email = form.email.trim();
 
     if (!email) {
-      setFieldErrors((current) => ({ ...current, email: '이메일을 입력해 주세요.' }));
+      setFieldErrors((current) => ({ ...current, email: text.validation.emailRequired }));
       return;
     }
 
     if (!emailPattern.test(email)) {
-      setFieldErrors((current) => ({ ...current, email: '이메일 형식이 올바르지 않습니다.' }));
+      setFieldErrors((current) => ({ ...current, email: text.validation.emailInvalid }));
       return;
     }
 
@@ -89,7 +135,8 @@ export const SignupPage = () => {
       const response = await checkEmail(email);
       const available = Boolean(response.data?.data?.available);
       const message =
-        response.data?.message || (available ? '사용 가능한 이메일입니다.' : '이미 사용 중인 이메일입니다.');
+        response.data?.message ||
+        (available ? 'This email is available.' : 'This email is already in use.');
 
       setEmailChecked(available);
       setEmailCheckMessage(message);
@@ -99,7 +146,7 @@ export const SignupPage = () => {
       }
     } catch (exception) {
       const responseMessage = exception?.response?.data?.message;
-      const message = responseMessage || '이메일 중복 확인에 실패했습니다. 다시 시도해 주세요.';
+      const message = responseMessage || text.validation.emailCheckFailed;
       setEmailChecked(false);
       setEmailCheckMessage(message);
       setError(message);
@@ -118,7 +165,7 @@ export const SignupPage = () => {
     }
 
     if (!emailChecked) {
-      setError('이메일 중복확인을 먼저 진행해 주세요.');
+      setError(text.validation.emailCheckRequired);
       return;
     }
 
@@ -132,7 +179,7 @@ export const SignupPage = () => {
 
       const nicknameCheckResponse = await checkNickname(nickname);
       if (!nicknameCheckResponse.data?.data?.available) {
-        setError(nicknameCheckResponse.data?.message || '이미 사용 중인 닉네임입니다.');
+        setError(nicknameCheckResponse.data?.message || text.validation.nicknameDuplicate);
         return;
       }
 
@@ -143,7 +190,7 @@ export const SignupPage = () => {
         nickname,
       });
 
-      const successMessage = response.data?.message || '회원가입이 완료되었습니다.';
+      const successMessage = response.data?.message || 'Sign up completed.';
       window.alert(successMessage);
       navigate('/login', {
         replace: true,
@@ -154,7 +201,7 @@ export const SignupPage = () => {
       });
     } catch (exception) {
       const responseMessage = exception?.response?.data?.message;
-      setError(responseMessage || '회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      setError(responseMessage || text.validation.signupFailed);
     } finally {
       setLoading(false);
     }
@@ -165,58 +212,51 @@ export const SignupPage = () => {
       <Card className="form-card auth-card signup-card">
         <div className="signup-layout">
           <section className="signup-copy" aria-labelledby="signup-intro-title">
-            <p className="eyebrow signup-brand">LOAHUB</p>
+            <p className="eyebrow signup-brand">{text.brand}</p>
             <div className="signup-copy__header">
               <h1 id="signup-intro-title">
-                로스트아크를
-                <span>더 편하게 즐기는 공간</span>
+                {text.introTitle}
+                <span>{text.introSubtitle}</span>
               </h1>
-              <h2>LoaHub와 함께 시작해 보세요</h2>
-              <p className="signup-copy__description">
-                캐릭터 정보, 게시판, 콘텐츠 일정을 한곳에서 확인하고
-                필요한 기능만 깔끔하게 이용할 수 있습니다.
-              </p>
+              <h2>{text.formTitle}</h2>
+              <p className="signup-copy__description">{text.introDescription}</p>
             </div>
 
-            <ul className="signup-list" aria-label="서비스 안내">
-              <li>안전한 이메일 기반 회원가입</li>
-              <li>자유게시판과 직업별 게시판 이용</li>
-              <li>요일별 주요 콘텐츠 일정 확인</li>
-              <li>이메일 중복확인 후 가입 진행</li>
+            <ul className="signup-list" aria-label="Service highlights">
+              {text.introList.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
 
-            <p className="signup-copy__note">
-              가입 후에는 내 캐릭터를 등록하고 LoaHub의 주요 기능을 사용할 수 있습니다.
-            </p>
+            <p className="signup-copy__note">{text.introNote}</p>
           </section>
 
           <section className="signup-form-panel" aria-labelledby="signup-form-title">
             <div className="signup-form-panel__header">
-              <p className="eyebrow">회원 정보</p>
-              <h2 id="signup-form-title">LoaHub 회원가입</h2>
-              <p>
-                이메일과 닉네임으로 계정을 만들고
-                <br />
-                내 캐릭터 커뮤니티 활동을 시작해 보세요.
-              </p>
+              <p className="eyebrow">{text.formEyebrow}</p>
+              <h2 id="signup-form-title">{text.formTitle}</h2>
+              <p>{text.formDescription}</p>
             </div>
 
             <form className="form-stack auth-form signup-form" onSubmit={handleSubmit}>
-              {error ? <div className="auth-message auth-message--error">{error}</div> : null}
+              <div className="signup-form__alert-area">
+                {error ? <div className="auth-message auth-message--error">{error}</div> : null}
+              </div>
 
               <div className="email-check-row">
                 <Input
-                  label="이메일"
+                  label={text.emailLabel}
                   type="email"
                   value={form.email}
                   onChange={updateField('email')}
                   autoComplete="email"
-                  placeholder="example@loahub.com"
-                  hint={fieldErrors.email || emailCheckMessage}
+                  placeholder={text.emailPlaceholder}
+                  hint={fieldErrors.email || emailCheckMessage || '\u00A0'}
                 />
                 <Button
                   type="button"
                   variant="secondary"
+                  className="email-check-button"
                   onClick={handleCheckEmail}
                   disabled={
                     loading ||
@@ -225,45 +265,45 @@ export const SignupPage = () => {
                     !emailPattern.test(form.email.trim())
                   }
                 >
-                  {emailCheckLoading ? '확인 중...' : '이메일 중복확인'}
+                  {emailCheckLoading ? text.emailCheckLoading : text.emailCheckButton}
                 </Button>
               </div>
 
               <Input
-                label="비밀번호"
+                label={text.passwordLabel}
                 type="password"
                 value={form.password}
                 onChange={updateField('password')}
                 autoComplete="new-password"
-                placeholder="최소 8자 이상"
-                hint={fieldErrors.password}
+                placeholder={text.passwordPlaceholder}
+                hint={fieldErrors.password || '\u00A0'}
               />
               <Input
-                label="비밀번호 확인"
+                label={text.passwordConfirmLabel}
                 type="password"
                 value={form.passwordConfirm}
                 onChange={updateField('passwordConfirm')}
                 autoComplete="new-password"
-                placeholder="비밀번호를 다시 입력해 주세요."
-                hint={fieldErrors.passwordConfirm}
+                placeholder={text.passwordConfirmPlaceholder}
+                hint={fieldErrors.passwordConfirm || '\u00A0'}
               />
               <Input
-                label="닉네임"
+                label={text.nicknameLabel}
                 value={form.nickname}
                 onChange={updateField('nickname')}
                 autoComplete="nickname"
-                placeholder="2~12자"
-                hint={fieldErrors.nickname}
+                placeholder={text.nicknamePlaceholder}
+                hint={fieldErrors.nickname || '\u00A0'}
               />
 
               <div className="auth-form__actions signup-actions">
                 <Button type="submit" disabled={loading}>
-                  {loading ? '회원가입 처리 중...' : '회원가입'}
+                  {loading ? text.signupButtonLoading : text.signupButton}
                 </Button>
               </div>
 
               <p className="form-footnote auth-form__footer">
-                이미 LoaHub 계정이 있으신가요? <Link to="/login">로그인으로 이동</Link>
+                {text.loginLinkPrefix} <Link to="/login">{text.loginLink}</Link>
               </p>
             </form>
           </section>

@@ -13,12 +13,16 @@ import com.loahub.common.model.DomainModels.CalendarContent;
 import com.loahub.common.model.DomainModels.CalendarNotification;
 import com.loahub.common.model.DomainModels.Character;
 import com.loahub.common.model.DomainModels.Comment;
+import com.loahub.common.model.DomainModels.MerchantFavorite;
 import com.loahub.common.model.DomainModels.Message;
 import com.loahub.common.model.DomainModels.Post;
 import com.loahub.common.model.DomainModels.User;
 import com.loahub.common.model.DomainModels.UserProfile;
 import com.loahub.common.model.DomainModels.WanderingMerchant;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
@@ -91,6 +96,11 @@ public class MockDatabase {
         new WanderingMerchant(1, "루테란 서부", "떠돌이 상인 루카스", "18:00 ~ 19:30", List.of("카드팩", "요리 재료", "호감도 아이템"), "평일 저녁 자주 등장하는 기본 지역 상인", "아제나", now()),
         new WanderingMerchant(2, "베른 남부", "떠돌이 상인 에이든", "20:00 ~ 21:00", List.of("각인서", "전투 각인서", "재련 재료"), "고레벨 유저가 자주 찾는 핵심 지역", "카단", now()),
         new WanderingMerchant(3, "엘가시아", "떠돌이 상인 나히르", "22:00 ~ 23:30", List.of("영웅 호감도", "재료 상자", "배틀 아이템"), "고급 재료 위주로 노리는 지역", "마리", now())
+    ));
+
+    private final List<MerchantFavorite> merchantFavorites = new CopyOnWriteArrayList<>(List.of(
+        new MerchantFavorite(1, 1, 1, now()),
+        new MerchantFavorite(2, 1, 3, now())
     ));
 
     private final List<Message> messages = new CopyOnWriteArrayList<>(List.of(
@@ -399,6 +409,67 @@ public class MockDatabase {
         return List.copyOf(merchants);
     }
 
+    public Optional<WanderingMerchant> findMerchantById(long id) {
+        return merchants.stream().filter(merchant -> merchant.id() == id).findFirst();
+    }
+
+    public List<WanderingMerchant> findMerchantsByRegion(String region) {
+        String normalized = normalize(region);
+        if (normalized.isBlank()) {
+            return findMerchants();
+        }
+        return merchants.stream()
+            .filter(merchant -> normalize(merchant.region()).contains(normalized))
+            .collect(Collectors.toList());
+    }
+
+    public List<WanderingMerchant> searchMerchants(String keyword) {
+        String normalized = normalize(keyword);
+        if (normalized.isBlank()) {
+            return findMerchants();
+        }
+        return merchants.stream()
+            .filter(merchant -> normalize(merchant.region()).contains(normalized)
+                || normalize(merchant.merchantName()).contains(normalized)
+                || normalize(merchant.spawnTime()).contains(normalized)
+                || normalize(merchant.description()).contains(normalized)
+                || normalize(merchant.serverName()).contains(normalized)
+                || merchant.items().stream().anyMatch(item -> normalize(item).contains(normalized)))
+            .collect(Collectors.toList());
+    }
+
+    public List<WanderingMerchant> findCurrentMerchants() {
+        LocalTime now = LocalTime.now(ZoneId.of("Asia/Seoul"));
+        return merchants.stream()
+            .filter(merchant -> isCurrentMerchant(merchant.spawnTime(), now))
+            .collect(Collectors.toList());
+    }
+
+    public List<MerchantFavorite> findMerchantFavoritesByUserId(long userId) {
+        return merchantFavorites.stream()
+            .filter(favorite -> favorite.userId() == userId)
+            .collect(Collectors.toList());
+    }
+
+    public Optional<MerchantFavorite> findMerchantFavorite(long userId, long merchantId) {
+        return merchantFavorites.stream()
+            .filter(favorite -> favorite.userId() == userId && favorite.merchantId() == merchantId)
+            .findFirst();
+    }
+
+    public MerchantFavorite createMerchantFavorite(long userId, long merchantId) {
+        return findMerchantFavorite(userId, merchantId)
+            .orElseGet(() -> {
+                MerchantFavorite favorite = new MerchantFavorite(merchantFavoriteSeq.getAndIncrement(), userId, merchantId, now());
+                merchantFavorites.add(favorite);
+                return favorite;
+            });
+    }
+
+    public boolean deleteMerchantFavorite(long userId, long merchantId) {
+        return merchantFavorites.removeIf(favorite -> favorite.userId() == userId && favorite.merchantId() == merchantId);
+    }
+
     public List<Message> findInbox(long userId) {
         return messages.stream()
             .filter(message -> message.receiverId() == userId && !message.deletedByReceiver())
@@ -471,5 +542,38 @@ public class MockDatabase {
 
     public List<Post> findPostsByBoardId(long boardId) {
         return posts.stream().filter(post -> post.boardId() == boardId && !post.deletedYn()).collect(Collectors.toList());
+    }
+
+    private boolean isCurrentMerchant(String spawnTime, LocalTime currentTime) {
+        if (spawnTime == null || spawnTime.isBlank()) {
+            return false;
+        }
+
+        String[] parts = spawnTime.split("~");
+        if (parts.length != 2) {
+            return false;
+        }
+
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H:mm");
+            LocalTime start = LocalTime.parse(parts[0].trim(), formatter);
+            LocalTime end = LocalTime.parse(parts[1].trim(), formatter);
+
+            if (start.equals(end)) {
+                return true;
+            }
+
+            if (start.isBefore(end)) {
+                return !currentTime.isBefore(start) && !currentTime.isAfter(end);
+            }
+
+            return !currentTime.isBefore(start) || !currentTime.isAfter(end);
+        } catch (Exception exception) {
+            return false;
+        }
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.KOREA);
     }
 }
