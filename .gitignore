@@ -9,3 +9,5 @@ frontend/.env.development
 backend/src/main/resources/application.yml
 backend/src/main/resources/application-local.yml
 *.log
+.supabase/
+supabase/.temp/

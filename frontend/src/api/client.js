@@ -6,6 +6,11 @@ import {
   postsSeed,
   profileSeed,
 } from '../data/mockData';
+import {
+  getLostArkCalendarDate,
+  getLostArkCalendarToday,
+  getLostArkCalendarWeek,
+} from './lostarkCalendarApi';
 import { marketItemsSeed } from '../data/marketMockData';
 import { readStorage } from '../utils/storage';
 
@@ -36,20 +41,13 @@ export const api = {
     });
   },
   async getLostArkCalendarToday() {
-    return apiClient.get('/api/lostark/calendar/today', {
-      timeout: 30000,
-    });
+    return { data: { data: await getLostArkCalendarToday() } };
   },
   async getLostArkCalendarWeek() {
-    return apiClient.get('/api/lostark/calendar/week', {
-      timeout: 30000,
-    });
+    return { data: { data: await getLostArkCalendarWeek() } };
   },
   async getLostArkCalendarDate(date) {
-    return apiClient.get('/api/lostark/calendar/date', {
-      params: { date },
-      timeout: 30000,
-    });
+    return { data: { data: await getLostArkCalendarDate(date) } };
   },
   async setMainCharacter(characterName) {
     return apiClient.post('/api/users/me/main-character', {
@@ -199,9 +197,7 @@ export const api = {
     return delay({ data: { post, comments } });
   },
   async getCalendarContents() {
-    return apiClient.get('/api/lostark/calendar/week', {
-      timeout: 30000,
-    });
+    return { data: { data: await getLostArkCalendarWeek() } };
   },
   async getMessages() {
     if (!useMock) {
