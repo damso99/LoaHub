@@ -117,12 +117,14 @@ export const CalendarPage = () => {
   const { requireLogin } = useAuthGuard();
   const [calendarToday, setCalendarToday] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSlowLoadingHint, setShowSlowLoadingHint] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [nowTick, setNowTick] = useState(() => new Date());
 
   const loadCalendar = useCallback(async () => {
     setLoading(true);
     setErrorMessage('');
+    setShowSlowLoadingHint(false);
 
     try {
       const response = await api.getLostArkCalendarToday();
@@ -150,6 +152,16 @@ export const CalendarPage = () => {
   useEffect(() => {
     void loadCalendar();
   }, [loadCalendar]);
+
+  useEffect(() => {
+    if (!loading) {
+      setShowSlowLoadingHint(false);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setShowSlowLoadingHint(true), 4000);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowTick(new Date()), 1000);
@@ -214,10 +226,59 @@ export const CalendarPage = () => {
       </Card>
 
       {loading ? (
-        <Card className="loading-state">
-          <h2 className="loading-state__title">캘린더를 불러오는 중입니다.</h2>
-          <p className="loading-state__desc">DB에 저장된 오늘 로스트아크 일정을 읽고 있습니다.</p>
-        </Card>
+        <>
+          <Card className="loading-state calendar-loading-card">
+            <h2 className="loading-state__title">캘린더를 불러오는 중입니다.</h2>
+            <p className="loading-state__desc">DB에 저장된 오늘 로스트아크 일정을 읽고 있습니다.</p>
+            {showSlowLoadingHint ? (
+              <p className="calendar-loading-card__hint">
+                서버 응답이 길어지고 있습니다. 잠시만 기다려 주세요.
+              </p>
+            ) : null}
+          </Card>
+
+          <section className="calendar-today-grid" aria-label="캘린더 로딩 중">
+            {SECTION_CONFIG.map((section) => (
+              <Card key={section.key} className="calendar-today-section calendar-today-skeleton">
+                <div className="calendar-today-section__header">
+                  <div className="calendar-today-section__title-wrap">
+                    <span className={`calendar-today-section__icon calendar-today-section__icon--${section.tone} material-symbols-outlined`}>
+                      {section.icon}
+                    </span>
+                    <div>
+                      <p className="calendar-today-section__eyebrow">오늘 일정</p>
+                      <h2>{section.title}</h2>
+                    </div>
+                  </div>
+                  <span className="calendar-loading-pill" />
+                </div>
+
+                <div className="calendar-today-section__items">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <article key={`${section.key}-skeleton-${index}`} className="calendar-today-item calendar-today-item--skeleton">
+                      <div className="calendar-today-item__media">
+                        <div className="calendar-today-item__image calendar-today-item__image--placeholder calendar-loading-block" />
+                      </div>
+                      <div className="calendar-today-item__body">
+                        <div className="calendar-today-item__topline">
+                          <span className="calendar-loading-pill" />
+                          <span className="calendar-loading-pill" />
+                        </div>
+                        <div className="calendar-loading-line calendar-loading-block" />
+                        <div className="calendar-loading-line calendar-loading-block calendar-loading-line--short" />
+                        <div className="calendar-loading-row">
+                          <span className="calendar-loading-chip calendar-loading-block" />
+                          <span className="calendar-loading-chip calendar-loading-block" />
+                          <span className="calendar-loading-chip calendar-loading-block" />
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </section>
+        </>
       ) : errorMessage ? (
         <EmptyState title="캘린더 조회 실패" description={errorMessage} />
       ) : (
