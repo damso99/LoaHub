@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.loahub.board.BoardMapper">
+  <resultMap id="BoardRowMap" type="com.loahub.board.model.BoardRow">
+    <constructor>
+      <idArg column="id" javaType="long" />
+      <arg column="slug" javaType="string" />
+      <arg column="board_type" javaType="string" />
+      <arg column="board_name" javaType="string" />
+      <arg column="class_code" javaType="string" />
+      <arg column="class_name" javaType="string" />
+      <arg column="sort_order" javaType="int" />
+      <arg column="status" javaType="string" />
+      <arg column="created_at" javaType="java.time.OffsetDateTime" />
+      <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+    </constructor>
+  </resultMap>
+
+  <resultMap id="BoardCategoryRowMap" type="com.loahub.board.model.BoardCategoryRow">
+    <constructor>
+      <idArg column="id" javaType="long" />
+      <arg column="board_type" javaType="string" />
+      <arg column="category_code" javaType="string" />
+      <arg column="category_name" javaType="string" />
+      <arg column="sort_order" javaType="int" />
+      <arg column="status" javaType="string" />
+      <arg column="created_at" javaType="java.time.OffsetDateTime" />
+      <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+    </constructor>
+  </resultMap>
+
+  <select id="findBoards" resultMap="BoardRowMap">
+    SELECT
+      id,
+      slug,
+      board_type,
+      board_name,
+      class_code,
+      class_name,
+      sort_order,
+      status,
+      created_at,
+      updated_at
+    FROM boards
+    WHERE status = 'ACTIVE'
+    ORDER BY sort_order ASC, id ASC
+  </select>
+
+  <select id="findBoardBySlug" resultMap="BoardRowMap">
+    SELECT
+      id,
+      slug,
+      board_type,
+      board_name,
+      class_code,
+      class_name,
+      sort_order,
+      status,
+      created_at,
+      updated_at
+    FROM boards
+    WHERE slug = #{slug}
+      AND status = 'ACTIVE'
+    LIMIT 1
+  </select>
+
+  <select id="findCategoriesByBoardType" resultMap="BoardCategoryRowMap">
+    SELECT
+      id,
+      board_type,
+      code AS category_code,
+      name AS category_name,
+      sort_order,
+      status,
+      created_at,
+      updated_at
+    FROM board_categories
+    WHERE board_type = #{boardType}
+      AND status = 'ACTIVE'
+    ORDER BY sort_order ASC, id ASC
+  </select>
+</mapper>

@@ -17,8 +17,7 @@ public class BoardController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Object>> getBoards() {
+    public ResponseEntity<ApiResponse<?>> getBoards() {
         return ResponseEntity.ok(boardService.getBoards());
     }
 }
-

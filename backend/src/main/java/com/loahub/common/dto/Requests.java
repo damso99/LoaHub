@@ -39,9 +39,12 @@ public final class Requests {
 
     public record PostRequest(
         long boardId,
+        String boardSlug,
         String title,
         String content,
-        String className
+        String className,
+        String categoryCode,
+        Boolean pinned
     ) {
     }
 
@@ -54,4 +57,3 @@ public final class Requests {
     public record MessageRequest(long receiverId, String title, String content) {
     }
 }
-

@@ -31,8 +31,9 @@ export const AppRoutes = () => {
         <Route path="/register" element={<Navigate to="/signup" replace />} />
         <Route path="/character-search" element={<CharacterSearchPage />} />
         <Route path="/boards/free" element={<BoardsPage />} />
-        <Route path="/boards/class" element={<BoardsPage />} />
-        <Route path="/boards/class/:className" element={<BoardClassPage />} />
+        <Route path="/boards/free/best" element={<BoardsPage />} />
+        <Route path="/boards/class" element={<BoardClassPage />} />
+        <Route path="/boards/class/:classCode" element={<BoardClassPage />} />
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/merchant" element={<MerchantPage />} />
@@ -40,6 +41,7 @@ export const AppRoutes = () => {
         <Route path="/boards" element={<Navigate to="/boards/free" replace />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/write" element={<WritePage />} />
+          <Route path="/posts/write" element={<WritePage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/messages/:messageId" element={<MessageDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />

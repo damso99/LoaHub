@@ -24,7 +24,7 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Object>> getComments(@PathVariable long postId) {
+    public ResponseEntity<ApiResponse<?>> getComments(@PathVariable long postId) {
         return ResponseEntity.ok(commentService.getComments(postId));
     }
 

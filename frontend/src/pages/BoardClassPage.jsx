@@ -1,21 +1,14 @@
 import { useParams } from 'react-router-dom';
-import { useAppState } from '../context/AppStateContext';
-import { PageHeader } from '../components/PageHeader';
-import { PostTable } from '../components/PostTable';
+import { ForumBoardPage } from './ForumBoardPage';
 
 export const BoardClassPage = () => {
-  const { className } = useParams();
-  const { posts } = useAppState();
-
-  const filtered = posts.filter((post) => post.className === className);
+  const { classCode } = useParams();
 
   return (
-    <div className="page-stack board-page">
-      <PageHeader
-        title={`${className} 게시판`}
-        description={`${className} 직업 유저가 모여 공략과 세팅, 파티 정보를 공유합니다.`}
-      />
-      <PostTable posts={filtered.length > 0 ? filtered : posts.slice(0, 3)} />
-    </div>
+    <ForumBoardPage
+      boardType="CLASS"
+      classCode={classCode}
+      description="직업별 세팅, 공략, 전분, 질문을 한 화면에서 확인할 수 있습니다."
+    />
   );
 };

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.loahub.comment.CommentMapper">
+  <resultMap id="CommentRowMap" type="com.loahub.comment.model.CommentRow">
+    <constructor>
+      <idArg column="id" javaType="long" />
+      <arg column="post_id" javaType="long" />
+      <arg column="user_id" javaType="long" />
+      <arg column="author" javaType="string" />
+      <arg column="content" javaType="string" />
+      <arg column="status" javaType="string" />
+      <arg column="created_at" javaType="java.time.OffsetDateTime" />
+      <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+    </constructor>
+  </resultMap>
+
+  <select id="findCommentsByPostId" resultMap="CommentRowMap">
+    SELECT
+      id,
+      post_id,
+      user_id,
+      author,
+      content,
+      status,
+      created_at,
+      updated_at
+    FROM comments
+    WHERE post_id = #{postId}
+      AND status = 'ACTIVE'
+    ORDER BY created_at ASC, id ASC
+  </select>
+
+  <select id="findCommentById" resultMap="CommentRowMap">
+    SELECT
+      id,
+      post_id,
+      user_id,
+      author,
+      content,
+      status,
+      created_at,
+      updated_at
+    FROM comments
+    WHERE id = #{commentId}
+    LIMIT 1
+  </select>
+
+  <insert id="insertComment" parameterType="com.loahub.comment.command.CommentWriteCommand" useGeneratedKeys="true" keyProperty="commentId" keyColumn="id">
+    INSERT INTO comments (
+      post_id,
+      user_id,
+      author,
+      content,
+      status
+    ) VALUES (
+      #{postId},
+      #{userId},
+      #{author},
+      #{content},
+      #{status}
+    )
+  </insert>
+
+  <update id="softDeleteComment">
+    UPDATE comments
+    SET status = 'DELETED',
+        updated_at = NOW()
+    WHERE id = #{commentId}
+      AND status = 'ACTIVE'
+  </update>
+</mapper>
