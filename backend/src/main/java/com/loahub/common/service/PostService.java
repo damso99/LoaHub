@@ -83,13 +83,12 @@ public class PostService {
     public ApiResponse<PostDetailResponse> getPost(long id) {
         PostRow post = loadPost(id);
         postMapper.incrementViewCount(id);
-        PostRow refreshed = loadPost(id);
         List<CommentResponse> comments = commentMapper.findCommentsByPostId(id)
             .stream()
             .map(this::toCommentResponse)
             .toList();
 
-        return ApiResponse.ok("게시글을 불러왔습니다.", new PostDetailResponse(toSummaryResponse(refreshed), comments));
+        return ApiResponse.ok("게시글을 불러왔습니다.", new PostDetailResponse(toSummaryResponse(post, post.viewCount() + 1), comments));
     }
 
     @Transactional
@@ -262,6 +261,10 @@ public class PostService {
     }
 
     private PostSummaryResponse toSummaryResponse(PostRow post) {
+        return toSummaryResponse(post, post.viewCount());
+    }
+
+    private PostSummaryResponse toSummaryResponse(PostRow post, long viewCount) {
         return new PostSummaryResponse(
             post.id(),
             post.boardId(),
@@ -275,7 +278,7 @@ public class PostService {
             post.userId(),
             post.author(),
             post.title(),
-            post.viewCount(),
+            viewCount,
             post.likeCount(),
             post.commentCount(),
             post.pinned(),
