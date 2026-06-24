@@ -7,9 +7,9 @@ spring:
     import: optional:file:.env[.properties]
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:loahub}?sslmode=require
-    username: ${DB_USER:loahub}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:loahub}?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:loahub}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:}}
     hikari:
       initialization-fail-timeout: -1
   sql:
