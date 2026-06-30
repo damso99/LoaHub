@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { Header } from '../components/Header';
+import { MessageToastStack } from '../components/MessageToastStack';
 import { Sidebar } from '../components/Sidebar';
 
 export const AppLayout = () => {
@@ -16,6 +17,7 @@ export const AppLayout = () => {
           <Outlet />
         </main>
       </div>
+      <MessageToastStack />
       <BottomNav />
     </div>
   );

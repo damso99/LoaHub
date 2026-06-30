@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -49,15 +48,10 @@ export const MarketPage = () => {
   };
 
   return (
-    <div className="page-stack merchant-page">
+    <div className="page-stack market-page">
       <PageHeader
         title="Market prices"
         description="Search item prices from the Lost Ark Open API through the backend."
-        action={
-          <Button as={Link} to="/merchant" variant="secondary">
-            Wandering merchants
-          </Button>
-        }
       />
 
       <Card className="search-card">

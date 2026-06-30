@@ -102,21 +102,6 @@ public final class DomainModels {
     ) {
     }
 
-    public record WanderingMerchant(
-        long id,
-        String region,
-        String merchantName,
-        String spawnTime,
-        List<String> items,
-        String description,
-        String serverName,
-        OffsetDateTime createdAt
-    ) {
-    }
-
-    public record MerchantFavorite(long id, long userId, long merchantId, OffsetDateTime createdAt) {
-    }
-
     public record Message(
         long id,
         long senderId,

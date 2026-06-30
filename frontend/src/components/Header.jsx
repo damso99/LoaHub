@@ -5,7 +5,7 @@ import { Button } from './Button';
 
 export const Header = () => {
   const navigate = useNavigate();
-  const { user } = useAppState();
+  const { user, messageUnreadCount } = useAppState();
   const [keyword, setKeyword] = useState('');
 
   const handleSearch = (event) => {
@@ -35,8 +35,9 @@ export const Header = () => {
       <div className="topbar__actions">
         {user ? (
           <>
-            <Button as={Link} to="/messages" variant="ghost" className="icon-button" aria-label="쪽지함">
+            <Button as={Link} to="/messages" variant="ghost" className="icon-button icon-button--messages" aria-label="쪽지함">
               <span className="material-symbols-outlined">mail</span>
+              {messageUnreadCount > 0 ? <span className="icon-button__badge">{messageUnreadCount > 99 ? '99+' : messageUnreadCount}</span> : null}
             </Button>
             <Button as={Link} to="/profile" variant="ghost" className="icon-button" aria-label="프로필">
               <span className="material-symbols-outlined">person</span>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.loahub.message.MessageMapper">
+  <resultMap id="MessageThreadRowMap" type="com.loahub.message.model.MessageThreadRow">
+    <constructor>
+      <idArg column="id" javaType="long" />
+      <arg column="sender_id" javaType="long" />
+      <arg column="receiver_id" javaType="long" />
+      <arg column="last_message" javaType="string" />
+      <arg column="last_message_at" javaType="java.time.OffsetDateTime" />
+      <arg column="sender_deleted" javaType="boolean" />
+      <arg column="receiver_deleted" javaType="boolean" />
+      <arg column="created_at" javaType="java.time.OffsetDateTime" />
+      <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+    </constructor>
+  </resultMap>
+
+  <resultMap id="MessageRowMap" type="com.loahub.message.model.MessageRow">
+    <constructor>
+      <idArg column="id" javaType="long" />
+      <arg column="thread_id" javaType="long" />
+      <arg column="sender_id" javaType="long" />
+      <arg column="receiver_id" javaType="long" />
+      <arg column="content" javaType="string" />
+      <arg column="read_yn" javaType="boolean" />
+      <arg column="deleted_by_sender" javaType="boolean" />
+      <arg column="deleted_by_receiver" javaType="boolean" />
+      <arg column="created_at" javaType="java.time.OffsetDateTime" />
+      <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+    </constructor>
+  </resultMap>
+
+  <select id="findThreadById" resultMap="MessageThreadRowMap">
+    SELECT id, sender_id, receiver_id, last_message, last_message_at, sender_deleted, receiver_deleted, created_at, updated_at
+    FROM message_threads
+    WHERE id = #{threadId}
+  </select>
+
+  <select id="findThreadByParticipants" resultMap="MessageThreadRowMap">
+    SELECT id, sender_id, receiver_id, last_message, last_message_at, sender_deleted, receiver_deleted, created_at, updated_at
+    FROM message_threads
+    WHERE (sender_id = #{senderId} AND receiver_id = #{receiverId})
+       OR (sender_id = #{receiverId} AND receiver_id = #{senderId})
+    ORDER BY updated_at DESC, id DESC
+    LIMIT 1
+  </select>
+
+  <select id="findThreadResponsesByUserId" resultType="com.loahub.message.dto.MessageThreadResponse">
+    SELECT
+      t.id AS threadId,
+      CASE WHEN t.sender_id = #{userId} THEN t.receiver_id ELSE t.sender_id END AS opponentId,
+      u.nickname AS opponentNickname,
+      COALESCE(u.main_character_name, '') AS opponentMainCharacterName,
+      t.last_message AS lastMessage,
+      t.last_message_at AS lastMessageAt,
+      (
+        SELECT COUNT(*)
+        FROM messages m
+        WHERE m.thread_id = t.id
+          AND m.receiver_id = #{userId}
+          AND m.read_yn = FALSE
+          AND m.deleted_by_receiver = FALSE
+      ) AS unreadCount
+    FROM message_threads t
+    JOIN public.users u
+      ON u.user_id = CASE WHEN t.sender_id = #{userId} THEN t.receiver_id ELSE t.sender_id END
+    WHERE (t.sender_id = #{userId} AND t.sender_deleted = FALSE)
+       OR (t.receiver_id = #{userId} AND t.receiver_deleted = FALSE)
+    ORDER BY t.last_message_at DESC, t.id DESC
+  </select>
+
+  <select id="findMessagesByThreadId" resultType="com.loahub.message.dto.MessageResponse">
+    SELECT
+      m.id AS id,
+      m.thread_id AS threadId,
+      m.sender_id AS senderId,
+      sender.nickname AS senderNickname,
+      m.receiver_id AS receiverId,
+      receiver.nickname AS receiverNickname,
+      m.content AS content,
+      m.read_yn AS readYn,
+      m.created_at AS createdAt,
+      CASE WHEN m.sender_id = #{userId} THEN TRUE ELSE FALSE END AS mine
+    FROM messages m
+    JOIN public.users sender ON sender.user_id = m.sender_id
+    JOIN public.users receiver ON receiver.user_id = m.receiver_id
+    WHERE m.thread_id = #{threadId}
+    ORDER BY m.created_at ASC, m.id ASC
+  </select>
+
+  <select id="countUnreadMessagesByUserId" resultType="long">
+    SELECT COUNT(*)
+    FROM messages m
+    JOIN message_threads t ON t.id = m.thread_id
+    WHERE m.receiver_id = #{userId}
+      AND m.read_yn = FALSE
+      AND m.deleted_by_receiver = FALSE
+      AND (
+        (t.sender_id = #{userId} AND t.sender_deleted = FALSE)
+        OR (t.receiver_id = #{userId} AND t.receiver_deleted = FALSE)
+      )
+  </select>
+
+  <select id="countUnreadMessagesByThreadIdAndUserId" resultType="long">
+    SELECT COUNT(*)
+    FROM messages m
+    WHERE m.thread_id = #{threadId}
+      AND m.receiver_id = #{userId}
+      AND m.read_yn = FALSE
+      AND m.deleted_by_receiver = FALSE
+  </select>
+
+  <insert id="insertThread" parameterType="map">
+    INSERT INTO message_threads (
+      sender_id,
+      receiver_id,
+      last_message,
+      last_message_at,
+      sender_deleted,
+      receiver_deleted
+    ) VALUES (
+      #{senderId},
+      #{receiverId},
+      #{lastMessage},
+      NOW(),
+      FALSE,
+      FALSE
+    )
+  </insert>
+
+  <insert id="insertMessage" parameterType="map">
+    INSERT INTO messages (
+      thread_id,
+      sender_id,
+      receiver_id,
+      content,
+      read_yn,
+      deleted_by_sender,
+      deleted_by_receiver
+    ) VALUES (
+      #{threadId},
+      #{senderId},
+      #{receiverId},
+      #{content},
+      FALSE,
+      FALSE,
+      FALSE
+    )
+  </insert>
+
+  <update id="markMessagesRead">
+    UPDATE messages
+    SET read_yn = TRUE,
+        updated_at = NOW()
+    WHERE thread_id = #{threadId}
+      AND receiver_id = #{userId}
+      AND read_yn = FALSE
+      AND deleted_by_receiver = FALSE
+  </update>
+
+  <update id="softDeleteThread">
+    UPDATE message_threads
+    SET sender_deleted = CASE WHEN sender_id = #{userId} THEN TRUE ELSE sender_deleted END,
+        receiver_deleted = CASE WHEN receiver_id = #{userId} THEN TRUE ELSE receiver_deleted END,
+        updated_at = NOW()
+    WHERE id = #{threadId}
+      AND (sender_id = #{userId} OR receiver_id = #{userId})
+  </update>
+
+  <update id="restoreThread">
+    UPDATE message_threads
+    SET sender_deleted = FALSE,
+        receiver_deleted = FALSE,
+        updated_at = NOW()
+    WHERE id = #{threadId}
+  </update>
+
+  <update id="touchThread">
+    UPDATE message_threads
+    SET last_message = #{lastMessage},
+        last_message_at = NOW(),
+        sender_deleted = FALSE,
+        receiver_deleted = FALSE,
+        updated_at = NOW()
+    WHERE id = #{threadId}
+  </update>
+</mapper>

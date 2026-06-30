@@ -168,7 +168,7 @@ export const postsSeed = [
     id: 4,
     boardId: 1,
     userId: 1,
-    title: '이번 주 떠상 요약 공유합니다',
+    title: '이번 주 일정 공유합니다',
     content: '베른 남부, 엘가시아, 쿠르잔 쪽 매물 정리했습니다. 즐겨찾기 업데이트 완료.',
     viewCount: 2940,
     likeCount: 18,
@@ -247,67 +247,9 @@ export const calendarContents = [
   },
 ];
 
-export const merchantsSeed = [
-  {
-    id: 1,
-    region: '루테란 서부',
-    merchantName: '떠돌이 상인 루카스',
-    spawnTime: '18:00 ~ 19:30',
-    items: ['카드팩', '요리 재료', '호감도 아이템'],
-    description: '평일 저녁 자주 등장하는 기본 지역 상인',
-    serverName: '아제나',
-    favorite: true,
-  },
-  {
-    id: 2,
-    region: '베른 남부',
-    merchantName: '떠돌이 상인 에이든',
-    spawnTime: '20:00 ~ 21:00',
-    items: ['각인서', '전투 각인서', '재련 재료'],
-    description: '고레벨 유저가 자주 찾는 핵심 지역',
-    serverName: '카단',
-    favorite: false,
-  },
-  {
-    id: 3,
-    region: '엘가시아',
-    merchantName: '떠돌이 상인 나히르',
-    spawnTime: '22:00 ~ 23:30',
-    items: ['영웅 호감도', '재료 상자', '배틀 아이템'],
-    description: '고급 재료 위주로 노리는 지역',
-    serverName: '마리',
-    favorite: true,
-  },
-];
+export const merchantsSeed = [];
 
-export const messagesSeed = [
-  {
-    id: 1,
-    senderId: 2,
-    receiverId: 1,
-    title: '파티 모집 관련 문의',
-    content: '카멘 3관문 모집 관련해서 일정 다시 확인 부탁드립니다.',
-    isRead: false,
-    deletedBySender: false,
-    deletedByReceiver: false,
-    createdAt: '2026-06-17 10:20',
-    senderNickname: 'Zoro',
-    receiverNickname: '가디언 슬레이어',
-  },
-  {
-    id: 2,
-    senderId: 1,
-    receiverId: 3,
-    title: '떠상 정보 공유 감사합니다',
-    content: '베른 남부 매물 잘 확인했습니다. 즐겨찾기 해두겠습니다.',
-    isRead: true,
-    deletedBySender: false,
-    deletedByReceiver: false,
-    createdAt: '2026-06-16 22:05',
-    senderNickname: '가디언 슬레이어',
-    receiverNickname: 'PatchNote',
-  },
-];
+export const messagesSeed = [];
 
 export const characterSearchResults = [
   {
@@ -371,7 +313,7 @@ export const todayHighlights = [
   },
   {
     id: 3,
-    title: '떠돌이상인',
+    title: '상인 정보',
     description: '서버별 등장 시간과 판매 아이템을 모아두었습니다.',
     stat: '즐겨찾기 8개',
   },

@@ -14,7 +14,7 @@ export const MarketItemCard = ({ item }) => {
       <div className="market-card__top">
         <img className="market-card__icon" src={item.icon} alt={item.itemName} />
         <div className="market-card__heading">
-          <div className="merchant-card__title-row">
+          <div className="market-card__title-row">
             <h3>{item.itemName}</h3>
             <Badge tone="info">{item.grade || 'Normal'}</Badge>
           </div>

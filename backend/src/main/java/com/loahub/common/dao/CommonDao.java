@@ -14,10 +14,8 @@ import com.loahub.common.model.DomainModels.Character;
 import com.loahub.common.model.DomainModels.Comment;
 import com.loahub.common.model.DomainModels.Message;
 import com.loahub.common.model.DomainModels.Post;
-import com.loahub.common.model.DomainModels.MerchantFavorite;
 import com.loahub.common.model.DomainModels.User;
 import com.loahub.common.model.DomainModels.UserProfile;
-import com.loahub.common.model.DomainModels.WanderingMerchant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
@@ -136,42 +134,6 @@ public class CommonDao {
 
     public CalendarNotification upsertNotification(long userId, NotificationRequest request) {
         return mapper.upsertNotification(userId, request);
-    }
-
-    public List<WanderingMerchant> findMerchants() {
-        return mapper.findMerchants();
-    }
-
-    public List<WanderingMerchant> findMerchantsByRegion(String region) {
-        return mapper.findMerchantsByRegion(region);
-    }
-
-    public List<WanderingMerchant> searchMerchants(String keyword) {
-        return mapper.searchMerchants(keyword);
-    }
-
-    public List<WanderingMerchant> findCurrentMerchants() {
-        return mapper.findCurrentMerchants();
-    }
-
-    public Optional<WanderingMerchant> findMerchantById(long id) {
-        return mapper.findMerchantById(id);
-    }
-
-    public List<MerchantFavorite> findMerchantFavoritesByUserId(long userId) {
-        return mapper.findMerchantFavoritesByUserId(userId);
-    }
-
-    public Optional<MerchantFavorite> findMerchantFavorite(long userId, long merchantId) {
-        return mapper.findMerchantFavorite(userId, merchantId);
-    }
-
-    public MerchantFavorite createMerchantFavorite(long userId, long merchantId) {
-        return mapper.createMerchantFavorite(userId, merchantId);
-    }
-
-    public boolean deleteMerchantFavorite(long userId, long merchantId) {
-        return mapper.deleteMerchantFavorite(userId, merchantId);
     }
 
     public List<Message> findInbox(long userId) {

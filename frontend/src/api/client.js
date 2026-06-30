@@ -2,8 +2,6 @@ import axios from 'axios';
 import {
   boardsSeed,
   commentsSeed,
-  merchantsSeed,
-  messagesSeed,
   postsSeed,
   profileSeed,
 } from '../data/mockData';
@@ -174,79 +172,6 @@ export const api = {
       params: { keyword: normalized },
       timeout: 30000,
     });
-  },
-  async getMerchants(region) {
-    if (useMock) {
-      const normalized = String(region ?? '').trim();
-      const filtered = normalized
-        ? merchantsSeed.filter((item) => item.region.includes(normalized))
-        : merchantsSeed;
-
-      return delay({ data: clone(filtered) });
-    }
-
-    return apiClient.get('/api/merchants', {
-      params: region ? { region } : undefined,
-    });
-  },
-  async getCurrentMerchants(region) {
-    if (useMock) {
-      const current = merchantsSeed.filter((item) => item.spawnTime.includes('18:00'));
-      const filtered = region ? current.filter((item) => item.region.includes(region)) : current;
-      return delay({ data: clone(filtered) });
-    }
-
-    return apiClient.get('/api/merchants/current', {
-      params: region ? { region } : undefined,
-    });
-  },
-  async searchMerchants(keyword) {
-    if (useMock) {
-      const lower = String(keyword ?? '').trim().toLowerCase();
-      return delay({
-        data: clone(
-          merchantsSeed.filter(
-            (item) =>
-              item.region.toLowerCase().includes(lower) ||
-              item.merchantName.toLowerCase().includes(lower) ||
-              item.description.toLowerCase().includes(lower) ||
-              item.items.some((entry) => entry.toLowerCase().includes(lower)),
-          ),
-        ),
-      });
-    }
-
-    return apiClient.get('/api/merchants/search', {
-      params: { keyword },
-    });
-  },
-  async getMerchant(id) {
-    if (useMock) {
-      const merchant = merchantsSeed.find((item) => String(item.id) === String(id)) ?? merchantsSeed[0];
-      return delay({ data: clone(merchant) });
-    }
-
-    return apiClient.get(`/api/merchants/${id}`);
-  },
-  async favoriteMerchant(id) {
-    if (useMock) {
-      const merchant = merchantsSeed.find((item) => String(item.id) === String(id));
-      return delay({
-        data: merchant ? { ...clone(merchant), favorite: true } : null,
-      });
-    }
-
-    return apiClient.post(`/api/merchants/${id}/favorite`);
-  },
-  async unfavoriteMerchant(id) {
-    if (useMock) {
-      const merchant = merchantsSeed.find((item) => String(item.id) === String(id));
-      return delay({
-        data: merchant ? { ...clone(merchant), favorite: false } : null,
-      });
-    }
-
-    return apiClient.delete(`/api/merchants/${id}/favorite`);
   },
   async getMe() {
     if (!useMock) {
@@ -469,24 +394,22 @@ export const api = {
       timeout: 30000,
     });
   },
-  async getMessages() {
-    if (!useMock) {
-      try {
-        const [inbox, sent] = await Promise.all([
-          apiClient.get('/api/messages/inbox'),
-          apiClient.get('/api/messages/sent'),
-        ]);
-        return { inbox: inbox.data, sent: sent.data };
-      } catch {
-        // fallback to mock data in local development
-      }
-    }
-
-    return delay({
-      data: {
-        inbox: clone(messagesSeed.filter((item) => item.receiverId === 1)),
-        sent: clone(messagesSeed.filter((item) => item.senderId === 1)),
-      },
-    });
+  async getMessageThreads() {
+    return apiClient.get('/api/messages');
+  },
+  async getMessageThread(threadId) {
+    return apiClient.get(`/api/messages/${threadId}`);
+  },
+  async createMessage(payload) {
+    return apiClient.post('/api/messages', payload);
+  },
+  async markMessageThreadRead(threadId) {
+    return apiClient.patch(`/api/messages/${threadId}/read`);
+  },
+  async getUnreadMessageCount() {
+    return apiClient.get('/api/messages/unread-count');
+  },
+  async deleteMessageThread(threadId) {
+    return apiClient.delete(`/api/messages/${threadId}`);
   },
 };

@@ -19,13 +19,13 @@ export const HomePage = () => {
         <div className="hero-copy">
           <p className="eyebrow">LoaHub Community</p>
           <h1>로스트아크 커뮤니티 허브</h1>
-          <p>캘린더 콘텐츠와 인기 게시물을 한 번에 확인할 수 있는 홈 화면입니다.</p>
+          <p>게시판, 캘린더, 쪽지까지 이어지는 게임 커뮤니티 흐름을 한 화면에서 확인할 수 있습니다.</p>
         </div>
       </section>
 
       <PageHeader
         title="오늘의 캘린더"
-        description="로아 주요 콘텐츠와 알림 상태를 빠르게 확인하세요."
+        description="로아 주요 콘텐츠의 상태를 빠르게 확인하세요."
         action={
           <Button as={Link} to="/calendar" variant="secondary">
             캘린더 전체보기
@@ -71,12 +71,14 @@ export const HomePage = () => {
 
       <Card className="section-card home-footer-card">
         <div>
-          <h2>LoaHub 한눈에 보기</h2>
-          <p>게시판, 캘린더, 떠돌이상인, 쪽지까지 이어지는 게임 커뮤니티 흐름을 홈에서 보여줍니다.</p>
+          <h2>LoaHub 둘러보기</h2>
+          <p>게시판과 캘린더, 쪽지함까지 이어지는 게임 커뮤니티의 기본 흐름을 보여줍니다.</p>
         </div>
         <div className="hero-actions">
           <Button as={Link} to="/boards/free">게시판 보기</Button>
-          <Button as={Link} to="/merchant" variant="secondary">떠돌이상인</Button>
+          <Button as={Link} to="/messages" variant="secondary">
+            쪽지함
+          </Button>
         </div>
       </Card>
     </div>

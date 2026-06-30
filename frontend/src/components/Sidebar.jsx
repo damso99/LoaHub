@@ -7,11 +7,11 @@ const navItems = [
   { to: '/character-search', label: '캐릭터 검색', icon: 'swords' },
   { to: '/boards/free', label: '게시판', icon: 'dashboard' },
   { to: '/calendar', label: '캘린더', icon: 'calendar_today' },
-  { to: '/merchant', label: '떠돌이상인', icon: 'storefront' },
+  { to: '/messages', label: '쪽지함', icon: 'mail' },
 ];
 
 export const Sidebar = () => {
-  const { profile, isAdmin, isAuthenticated } = useAppState();
+  const { profile, isAdmin, isAuthenticated, messageUnreadCount } = useAppState();
 
   return (
     <aside className="sidebar">
@@ -30,7 +30,7 @@ export const Sidebar = () => {
           </>
         ) : (
           <div className="profile-card__content">
-            <strong>로그인이 필요합니다</strong>
+            <strong>로그인이 필요합니다.</strong>
             <p>로그인 후 캐릭터와 쪽지 기능을 이용할 수 있습니다.</p>
           </div>
         )}
@@ -46,6 +46,9 @@ export const Sidebar = () => {
           >
             <span className="nav-link__icon material-symbols-outlined">{item.icon}</span>
             <span>{item.label}</span>
+            {item.to === '/messages' && messageUnreadCount > 0 ? (
+              <span className="nav-link__badge">{messageUnreadCount > 99 ? '99+' : messageUnreadCount}</span>
+            ) : null}
           </NavLink>
         ))}
         {isAdmin ? (

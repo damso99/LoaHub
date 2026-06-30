@@ -56,4 +56,10 @@ public final class Requests {
 
     public record MessageRequest(long receiverId, String title, String content) {
     }
+
+    public record MessageCreateRequest(
+        long receiverId,
+        @NotBlank String content
+    ) {
+    }
 }

@@ -13,12 +13,10 @@ import com.loahub.common.model.DomainModels.CalendarContent;
 import com.loahub.common.model.DomainModels.CalendarNotification;
 import com.loahub.common.model.DomainModels.Character;
 import com.loahub.common.model.DomainModels.Comment;
-import com.loahub.common.model.DomainModels.MerchantFavorite;
 import com.loahub.common.model.DomainModels.Message;
 import com.loahub.common.model.DomainModels.Post;
 import com.loahub.common.model.DomainModels.User;
 import com.loahub.common.model.DomainModels.UserProfile;
-import com.loahub.common.model.DomainModels.WanderingMerchant;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -42,7 +40,6 @@ public class MockDatabase {
     private final AtomicLong postSeq = new AtomicLong(5);
     private final AtomicLong commentSeq = new AtomicLong(5);
     private final AtomicLong notificationSeq = new AtomicLong(3);
-    private final AtomicLong merchantFavoriteSeq = new AtomicLong(3);
     private final AtomicLong messageSeq = new AtomicLong(3);
 
     private final List<User> users = new CopyOnWriteArrayList<>(List.of(
@@ -71,7 +68,7 @@ public class MockDatabase {
         new Post(1, 1, 1, "카멘 3관문 공략 파티 모집합니다", "아제나 서버 기준으로 금요일 20시부터 출발 예정입니다. 숙련자 우대하며 디스코드 필수입니다.", 12500, 42, 8, "Zoro", "슬레이어", false, true, List.of("가이드", "파티모집"), now(), now()),
         new Post(2, 1, 1, "오늘 밤 8시 에키드나 하드 트라이 서포터 모십니다", "서포터 1명 구합니다. 공팟보다는 커뮤니티 기반으로 진행하고 싶습니다.", 842, 16, 3, "GigaChad", "홀리나이트", false, false, List.of("파티모집"), now(), now()),
         new Post(3, 2, 1, "배럭 무기 25강 찍어줄 만한가요?", "소울이터 배럭 키우는 중인데 25강 투자 효율이 궁금합니다. 경험담 부탁드립니다.", 5200, 33, 16, "MokoMoko", "소울이터", false, false, List.of("직업질문"), now(), now()),
-        new Post(4, 1, 1, "이번 주 떠상 요약 공유합니다", "베른 남부, 엘가시아, 쿠르잔 쪽 매물 정리했습니다. 즐겨찾기 업데이트 완료.", 2940, 18, 4, "PatchNote", "기상술사", false, false, List.of("정보공유"), now(), now())
+        new Post(4, 1, 1, "이번 주 일정 요약 공유합니다", "베른 남부, 엘가시아, 쿠르잔 쪽 일정 정리했습니다. 업데이트 완료.", 2940, 18, 4, "PatchNote", "기상술사", false, false, List.of("정보공유"), now(), now())
     ));
 
     private final List<Comment> comments = new CopyOnWriteArrayList<>(List.of(
@@ -92,20 +89,9 @@ public class MockDatabase {
         new CalendarNotification(2, 1, 2, false, 15, now(), now())
     ));
 
-    private final List<WanderingMerchant> merchants = new CopyOnWriteArrayList<>(List.of(
-        new WanderingMerchant(1, "루테란 서부", "떠돌이 상인 루카스", "18:00 ~ 19:30", List.of("카드팩", "요리 재료", "호감도 아이템"), "평일 저녁 자주 등장하는 기본 지역 상인", "아제나", now()),
-        new WanderingMerchant(2, "베른 남부", "떠돌이 상인 에이든", "20:00 ~ 21:00", List.of("각인서", "전투 각인서", "재련 재료"), "고레벨 유저가 자주 찾는 핵심 지역", "카단", now()),
-        new WanderingMerchant(3, "엘가시아", "떠돌이 상인 나히르", "22:00 ~ 23:30", List.of("영웅 호감도", "재료 상자", "배틀 아이템"), "고급 재료 위주로 노리는 지역", "마리", now())
-    ));
-
-    private final List<MerchantFavorite> merchantFavorites = new CopyOnWriteArrayList<>(List.of(
-        new MerchantFavorite(1, 1, 1, now()),
-        new MerchantFavorite(2, 1, 3, now())
-    ));
-
     private final List<Message> messages = new CopyOnWriteArrayList<>(List.of(
         new Message(1, 2, 1, "파티 모집 관련 문의", "카멘 3관문 모집 관련해서 일정 다시 확인 부탁드립니다.", false, false, false, now()),
-        new Message(2, 1, 3, "떠상 정보 공유 감사합니다", "베른 남부 매물 잘 확인했습니다. 즐겨찾기 해두겠습니다.", true, false, false, now())
+        new Message(2, 1, 3, "정보 공유 감사합니다", "베른 남부 내용 잘 확인했습니다. 참고하겠습니다.", true, false, false, now())
     ));
 
     public Optional<User> findUserByEmail(String email) {
@@ -403,71 +389,6 @@ public class MockDatabase {
             notifications.replaceAll(notification -> notification.id() == current.id() ? updated : notification);
         }
         return updated;
-    }
-
-    public List<WanderingMerchant> findMerchants() {
-        return List.copyOf(merchants);
-    }
-
-    public Optional<WanderingMerchant> findMerchantById(long id) {
-        return merchants.stream().filter(merchant -> merchant.id() == id).findFirst();
-    }
-
-    public List<WanderingMerchant> findMerchantsByRegion(String region) {
-        String normalized = normalize(region);
-        if (normalized.isBlank()) {
-            return findMerchants();
-        }
-        return merchants.stream()
-            .filter(merchant -> normalize(merchant.region()).contains(normalized))
-            .collect(Collectors.toList());
-    }
-
-    public List<WanderingMerchant> searchMerchants(String keyword) {
-        String normalized = normalize(keyword);
-        if (normalized.isBlank()) {
-            return findMerchants();
-        }
-        return merchants.stream()
-            .filter(merchant -> normalize(merchant.region()).contains(normalized)
-                || normalize(merchant.merchantName()).contains(normalized)
-                || normalize(merchant.spawnTime()).contains(normalized)
-                || normalize(merchant.description()).contains(normalized)
-                || normalize(merchant.serverName()).contains(normalized)
-                || merchant.items().stream().anyMatch(item -> normalize(item).contains(normalized)))
-            .collect(Collectors.toList());
-    }
-
-    public List<WanderingMerchant> findCurrentMerchants() {
-        LocalTime now = LocalTime.now(ZoneId.of("Asia/Seoul"));
-        return merchants.stream()
-            .filter(merchant -> isCurrentMerchant(merchant.spawnTime(), now))
-            .collect(Collectors.toList());
-    }
-
-    public List<MerchantFavorite> findMerchantFavoritesByUserId(long userId) {
-        return merchantFavorites.stream()
-            .filter(favorite -> favorite.userId() == userId)
-            .collect(Collectors.toList());
-    }
-
-    public Optional<MerchantFavorite> findMerchantFavorite(long userId, long merchantId) {
-        return merchantFavorites.stream()
-            .filter(favorite -> favorite.userId() == userId && favorite.merchantId() == merchantId)
-            .findFirst();
-    }
-
-    public MerchantFavorite createMerchantFavorite(long userId, long merchantId) {
-        return findMerchantFavorite(userId, merchantId)
-            .orElseGet(() -> {
-                MerchantFavorite favorite = new MerchantFavorite(merchantFavoriteSeq.getAndIncrement(), userId, merchantId, now());
-                merchantFavorites.add(favorite);
-                return favorite;
-            });
-    }
-
-    public boolean deleteMerchantFavorite(long userId, long merchantId) {
-        return merchantFavorites.removeIf(favorite -> favorite.userId() == userId && favorite.merchantId() == merchantId);
     }
 
     public List<Message> findInbox(long userId) {
