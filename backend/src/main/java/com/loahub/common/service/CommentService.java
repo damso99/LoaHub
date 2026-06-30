@@ -7,7 +7,6 @@ import com.loahub.common.dto.ApiResponse;
 import com.loahub.common.dto.Requests.CommentRequest;
 import com.loahub.common.security.SecurityUtils;
 import com.loahub.post.PostMapper;
-import com.loahub.post.model.PostRow;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class CommentService {
     }
 
     public ApiResponse<List<CommentResponse>> getComments(long postId) {
-        loadPost(postId);
+        ensureActivePost(postId);
         List<CommentResponse> comments = commentMapper.findCommentsByPostId(postId).stream()
             .map(this::toResponse)
             .toList();
@@ -41,7 +40,7 @@ public class CommentService {
     @Transactional
     public ApiResponse<Map<String, Object>> create(long postId, CommentRequest request) {
         var currentUser = SecurityUtils.requireCurrentUser();
-        loadPost(postId);
+        ensureActivePost(postId);
 
         CommentWriteCommand command = new CommentWriteCommand();
         command.setPostId(postId);
@@ -55,7 +54,10 @@ public class CommentService {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 저장에 실패했습니다.");
         }
 
-        postMapper.increaseCommentCount(postId);
+        int updated = postMapper.increaseCommentCount(postId);
+        if (updated <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 카운트를 갱신하지 못했습니다.");
+        }
 
         Map<String, Object> payload = new LinkedHashMap<>();
         Long commentId = command.getCommentId();
@@ -89,13 +91,12 @@ public class CommentService {
         return ApiResponse.ok("댓글이 삭제되었습니다.", payload);
     }
 
-    private PostRow loadPost(long postId) {
-        PostRow post = postMapper.findPostById(postId)
+    private void ensureActivePost(long postId) {
+        Long foundPostId = postMapper.findActivePostId(postId)
             .orElseThrow(() -> new NoSuchElementException("존재하지 않는 게시글입니다."));
-        if (!STATUS_ACTIVE.equals(post.status())) {
+        if (foundPostId <= 0) {
             throw new NoSuchElementException("존재하지 않는 게시글입니다.");
         }
-        return post;
     }
 
     private CommentResponse toResponse(com.loahub.comment.model.CommentRow comment) {

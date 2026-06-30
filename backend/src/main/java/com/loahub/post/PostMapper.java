@@ -27,6 +27,8 @@ public interface PostMapper {
 
     Optional<PostRow> findPostByIdForUpdate(@Param("postId") long postId);
 
+    Optional<Long> findActivePostId(@Param("postId") long postId);
+
     int insertPost(PostWriteCommand command);
 
     int updatePost(PostWriteCommand command);

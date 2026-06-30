@@ -113,6 +113,14 @@
     LIMIT 1
   </select>
 
+  <select id="findActivePostId" resultType="java.lang.Long">
+    SELECT id
+    FROM posts
+    WHERE id = #{postId}
+      AND status = 'ACTIVE'
+    LIMIT 1
+  </select>
+
   <insert id="insertPost" parameterType="com.loahub.post.command.PostWriteCommand" useGeneratedKeys="true" keyProperty="postId" keyColumn="id">
     INSERT INTO posts (
       board_id,
