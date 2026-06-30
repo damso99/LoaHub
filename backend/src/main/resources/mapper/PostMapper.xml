@@ -37,7 +37,7 @@
     b.class_code,
     b.class_name,
     p.category_code,
-    c.category_name,
+    c.name AS category_name,
     p.user_id,
     p.author,
     p.title,
