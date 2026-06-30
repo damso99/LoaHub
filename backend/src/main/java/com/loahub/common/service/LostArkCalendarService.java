@@ -58,6 +58,7 @@ public class LostArkCalendarService {
     private final LostArkCalendarClient client;
     private final LostArkCalendarScheduleMapper scheduleMapper;
     private final LostArkCalendarSyncLogService syncLogService;
+    private final CalendarSyncService calendarSyncService;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
 
@@ -65,11 +66,13 @@ public class LostArkCalendarService {
         LostArkCalendarClient client,
         LostArkCalendarScheduleMapper scheduleMapper,
         LostArkCalendarSyncLogService syncLogService,
+        CalendarSyncService calendarSyncService,
         org.springframework.transaction.PlatformTransactionManager transactionManager
     ) {
         this.client = client;
         this.scheduleMapper = scheduleMapper;
         this.syncLogService = syncLogService;
+        this.calendarSyncService = calendarSyncService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.objectMapper = new ObjectMapper();
     }
@@ -78,10 +81,10 @@ public class LostArkCalendarService {
         return syncCalendar("MANUAL");
     }
 
-    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 6 * * WED", zone = "Asia/Seoul")
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void refreshLostArkWeeklyCalendar() {
         try {
-            syncCalendar("SCHEDULED");
+            calendarSyncService.syncCurrentCalendar();
         } catch (Exception ignored) {
             // 스케줄러는 실패해도 애플리케이션을 중단하지 않는다.
         }

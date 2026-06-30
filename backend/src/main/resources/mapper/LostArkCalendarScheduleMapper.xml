@@ -25,6 +25,10 @@
     </constructor>
   </resultMap>
 
+  <delete id="deleteAllSchedules">
+    DELETE FROM public.lostark_calendar_schedules
+  </delete>
+
   <delete id="deleteByWeekRange">
     DELETE FROM public.lostark_calendar_schedules
     WHERE week_start_date = #{weekStartDate}

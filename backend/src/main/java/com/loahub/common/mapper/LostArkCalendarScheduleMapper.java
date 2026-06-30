@@ -9,6 +9,8 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface LostArkCalendarScheduleMapper {
+    void deleteAllSchedules();
+
     void deleteByWeekRange(@Param("weekStartDate") LocalDate weekStartDate, @Param("weekEndDate") LocalDate weekEndDate);
 
     void insertSchedules(@Param("items") List<LostArkCalendarSchedule> items);

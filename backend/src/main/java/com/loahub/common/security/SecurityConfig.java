@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/lostark/calendar/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/characters/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/calendar/today", "/api/calendar/week").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/internal/calendar/sync").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/merchants", "/api/merchants/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/admin/lostark/calendar/sync").hasRole("ADMIN")
                 .anyRequest().authenticated())
