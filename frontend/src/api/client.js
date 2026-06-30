@@ -125,6 +125,7 @@ const buildPostRequestBody = (payload = {}) => {
 
   return {
     boardId: Number.isFinite(boardId) && boardId > 0 ? boardId : undefined,
+    boardSlug: payload.boardSlug ?? boardMetaBySlug[payload.boardSlug]?.slug ?? 'free',
     categoryCode: payload.categoryCode,
     title: payload.title,
     content: payload.content,

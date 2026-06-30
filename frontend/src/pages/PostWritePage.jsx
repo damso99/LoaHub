@@ -31,6 +31,7 @@ const buildPostRequestBody = (form, selectedBoard) => {
 
   return {
     boardId: Number.isFinite(boardId) && boardId > 0 ? boardId : undefined,
+    boardSlug: selectedBoard?.slug ?? form.boardSlug,
     categoryCode: form.categoryCode,
     title: form.title.trim(),
     content: form.content.trim(),
