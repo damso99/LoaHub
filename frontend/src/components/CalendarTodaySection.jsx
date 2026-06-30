@@ -3,16 +3,62 @@ import { Badge } from './Badge';
 import { Card } from './Card';
 import { RewardPopover } from './RewardPopover';
 
+const normalizeText = (value) =>
+  String(value ?? '')
+    .trim()
+    .replaceAll(/[\s_-]/g, '')
+    .toLowerCase();
+
+const isRewardForCurrentItem = (reward, item) => {
+  const rewardIslandId = reward?.islandId ?? reward?.scheduleId ?? reward?.schedule_id ?? reward?.id ?? null;
+  const itemId = item?.id ?? null;
+
+  if (rewardIslandId != null && itemId != null && String(rewardIslandId) === String(itemId)) {
+    return true;
+  }
+
+  const rewardIslandName = normalizeText(reward?.islandName ?? reward?.island_name ?? reward?.contentName ?? reward?.contentsName ?? reward?.name);
+  const itemName = normalizeText(item?.contentName ?? item?.name);
+  if (rewardIslandName && itemName && rewardIslandName === itemName) {
+    return true;
+  }
+
+  const rewardContentType = normalizeText(reward?.contentType ?? reward?.content_type ?? reward?.type);
+  const itemContentType = normalizeText(item?.contentType);
+  if (rewardContentType && itemContentType && rewardContentType === itemContentType) {
+    return true;
+  }
+
+  return false;
+};
+
 const getRewardList = (item) => {
-  if (Array.isArray(item?.rewards) && item.rewards.length > 0) {
-    return item.rewards;
+  const baseRewards = Array.isArray(item?.rewards) ? item.rewards : Array.isArray(item?.rewardItems) ? item.rewardItems : [];
+
+  if (baseRewards.length === 0) {
+    return [];
   }
 
-  if (Array.isArray(item?.rewardItems) && item.rewardItems.length > 0) {
-    return item.rewardItems;
+  const hasRewardMeta = baseRewards.some(
+    (reward) =>
+      reward?.islandId != null ||
+      reward?.scheduleId != null ||
+      reward?.schedule_id != null ||
+      reward?.islandName ||
+      reward?.island_name ||
+      reward?.contentName ||
+      reward?.contentsName ||
+      reward?.contentType ||
+      reward?.content_type ||
+      reward?.type,
+  );
+
+  const filteredRewards = baseRewards.filter((reward) => isRewardForCurrentItem(reward, item));
+  if (filteredRewards.length > 0) {
+    return filteredRewards;
   }
 
-  return [];
+  return hasRewardMeta ? [] : baseRewards;
 };
 
 const getRewardCountLabel = (rewards) => `보상 ${rewards.length}개`;
@@ -61,7 +107,6 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
 
                   <div className="calendar-today-item__headline">
                     <h3>{item.contentName}</h3>
-                    {item.occurrenceCount > 1 ? <Badge tone="neutral">x{item.occurrenceCount}</Badge> : null}
                   </div>
 
                   <div className="calendar-today-item__reward-area">

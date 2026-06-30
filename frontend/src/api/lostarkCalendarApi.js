@@ -68,9 +68,14 @@ const formatKstDate = (value = new Date()) => {
 };
 
 const normalizeReward = (reward) => ({
+  ...reward,
   name: reward?.name ?? reward?.Name ?? '',
   icon: reward?.icon ?? reward?.Icon ?? '',
   grade: reward?.grade ?? reward?.Grade ?? '',
+  islandId: reward?.islandId ?? reward?.island_id ?? reward?.scheduleId ?? reward?.schedule_id ?? null,
+  islandName: reward?.islandName ?? reward?.island_name ?? reward?.contentName ?? reward?.contentsName ?? '',
+  contentName: reward?.contentName ?? reward?.contentsName ?? reward?.islandName ?? reward?.island_name ?? '',
+  contentType: reward?.contentType ?? reward?.content_type ?? reward?.type ?? '',
 });
 
 const normalizeSchedule = (row) => ({
