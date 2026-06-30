@@ -172,6 +172,9 @@ const getSectionBadgeText = (items, selectedDate, now, todayKey) => {
 
 const normalizeCalendarItem = (schedule, sectionTitle) => ({
   id: schedule.id,
+  itemKey: schedule.id
+    ? String(schedule.id)
+    : `${schedule.startDate ?? ''}|${schedule.startHhmm ?? schedule.startTimeKst ?? ''}|${schedule.contentsName ?? ''}|${sectionTitle}`,
   contentName: schedule.contentsName ?? '-',
   contentType: sectionTitle,
   startTime: formatShortTime(schedule.startHhmm ?? schedule.startTimeKst),
@@ -191,6 +194,7 @@ const groupCalendarItemsByName = (items) => {
     if (!current) {
       groups.set(key, {
         ...item,
+        itemKey: item.itemKey,
         occurrenceCount: 1,
         rewards: Array.isArray(item.rewards) ? [...item.rewards] : [],
         sourceIds: Array.isArray(item.sourceIds) ? [...item.sourceIds] : item.id ? [item.id] : [],
@@ -203,6 +207,7 @@ const groupCalendarItemsByName = (items) => {
       rewardType: current.rewardType ?? item.rewardType ?? null,
       imageUrl: current.imageUrl || item.imageUrl || '',
       startTime: current.startTime || item.startTime || '',
+      itemKey: current.itemKey || item.itemKey,
       occurrenceCount: current.occurrenceCount + 1,
       rewards: Array.isArray(current.rewards) && current.rewards.length > 0 ? current.rewards : Array.isArray(item.rewards) ? [...item.rewards] : [],
       sourceIds: Array.isArray(current.sourceIds) ? [...current.sourceIds, ...(Array.isArray(item.sourceIds) ? item.sourceIds : item.id ? [item.id] : [])] : [],

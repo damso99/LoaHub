@@ -64,7 +64,7 @@ const getRewardList = (item) => {
 const getRewardCountLabel = (rewards) => `보상 ${rewards.length}개`;
 
 export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, eyebrow = '오늘 일정' }) => {
-  const [hoveredRewardId, setHoveredRewardId] = useState(null);
+  const [hoveredRewardKey, setHoveredRewardKey] = useState(null);
 
   return (
     <Card className="calendar-today-section">
@@ -85,10 +85,11 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
         {items.length > 0 ? (
           items.map((item) => {
             const rewards = getRewardList(item);
-            const isHovered = hoveredRewardId === item.id;
+            const itemKey = item.itemKey ?? item.id ?? item.contentName;
+            const isHovered = hoveredRewardKey === itemKey;
 
             return (
-              <article key={item.id} className="calendar-today-item">
+              <article key={itemKey} className="calendar-today-item">
                 <div className="calendar-today-item__media">
                   {item.imageUrl ? (
                     <img className="calendar-today-item__image" src={item.imageUrl} alt={item.contentName} />
@@ -112,12 +113,12 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
                   <div className="calendar-today-item__reward-area">
                     <div
                       className="reward-hover-wrap"
-                      onMouseEnter={() => setHoveredRewardId(item.id)}
-                      onMouseLeave={() => setHoveredRewardId((current) => (current === item.id ? null : current))}
-                      onFocusCapture={() => setHoveredRewardId(item.id)}
+                      onMouseEnter={() => setHoveredRewardKey(itemKey)}
+                      onMouseLeave={() => setHoveredRewardKey((current) => (current === itemKey ? null : current))}
+                      onFocusCapture={() => setHoveredRewardKey(itemKey)}
                       onBlurCapture={(event) => {
                         if (!event.currentTarget.contains(event.relatedTarget)) {
-                          setHoveredRewardId((current) => (current === item.id ? null : current));
+                          setHoveredRewardKey((current) => (current === itemKey ? null : current));
                         }
                       }}
                     >
@@ -128,7 +129,7 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
                         aria-haspopup="dialog"
                         onClick={() => {
                           if (typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
-                            setHoveredRewardId((current) => (current === item.id ? null : item.id));
+                            setHoveredRewardKey((current) => (current === itemKey ? null : itemKey));
                           }
                         }}
                       >
