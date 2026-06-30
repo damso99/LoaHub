@@ -16,12 +16,12 @@ import com.loahub.post.dto.PostSummaryResponse;
 import com.loahub.post.model.PostRow;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -196,8 +196,14 @@ public class PostService {
 
     private BoardRow resolveBoard(String boardSlug) {
         String normalizedSlug = boardSlug == null || boardSlug.isBlank() ? "free" : boardSlug.trim();
-        return boardMapper.findBoardBySlug(normalizedSlug)
-            .orElseThrow(() -> new NoSuchElementException("존재하지 않는 게시판입니다."));
+        try {
+            return boardMapper.findBoardBySlug(normalizedSlug)
+                .orElseGet(() -> BoardCatalog.defaultBoardRow(normalizedSlug)
+                    .orElseThrow(() -> new NoSuchElementException("존재하지 않는 게시판입니다.")));
+        } catch (DataAccessException exception) {
+            return BoardCatalog.defaultBoardRow(normalizedSlug)
+                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 게시판입니다."));
+        }
     }
 
     private PostRow loadPost(long id) {
@@ -215,8 +221,14 @@ public class PostService {
             throw new IllegalArgumentException("카테고리를 선택해 주세요.");
         }
 
-        boolean exists = boardMapper.findCategoriesByBoardType(boardType).stream()
-            .anyMatch(category -> category.categoryCode().equalsIgnoreCase(normalized));
+        boolean exists;
+        try {
+            exists = boardMapper.findCategoriesByBoardType(boardType).stream()
+                .anyMatch(category -> category.categoryCode().equalsIgnoreCase(normalized));
+        } catch (DataAccessException exception) {
+            exists = BoardCatalog.defaultCategoryCode(boardType, normalized).isPresent();
+        }
+
         if (!exists) {
             throw new IllegalArgumentException("지원하지 않는 카테고리입니다.");
         }
