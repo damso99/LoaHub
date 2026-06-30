@@ -84,7 +84,7 @@ export const PostDetailPage = () => {
   };
 
   const handleLike = async () => {
-    if (!requireLogin()) {
+    if (!requireLogin() || !post) {
       return;
     }
 
@@ -98,7 +98,7 @@ export const PostDetailPage = () => {
 
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
-    if (!requireLogin()) {
+    if (!requireLogin() || !post) {
       return;
     }
 
@@ -118,14 +118,14 @@ export const PostDetailPage = () => {
   };
 
   const handleDeletePost = async () => {
-    if (!window.confirm('게시글을 삭제하시겠습니까?')) {
+    if (!post || !window.confirm('게시글을 삭제하시겠습니까?')) {
       return;
     }
 
     try {
       await api.deletePost(post.id);
       const nextBoardPath =
-        post.boardType === 'CLASS' && post.classCode ? `/boards/class/${post.classCode}` : '/boards/free';
+        post.boardType === 'CLASS' && post.classCode ? `/boards/jobs/${post.classCode}` : '/boards/free';
       navigate(nextBoardPath, { replace: true });
     } catch (exception) {
       window.alert(exception?.message ?? '게시글 삭제에 실패했습니다.');
@@ -147,9 +147,10 @@ export const PostDetailPage = () => {
 
   const writeLink = useMemo(() => {
     if (!post) {
-      return '/posts/write?board=free';
+      return '/boards/write?board=free';
     }
-    return `/posts/write?board=${encodeURIComponent(post.boardSlug)}&postId=${post.id}`;
+
+    return `/boards/write?board=${encodeURIComponent(post.boardSlug)}&postId=${post.id}`;
   }, [post]);
 
   if (loading) {
@@ -191,7 +192,7 @@ export const PostDetailPage = () => {
             </Button>
             {canManagePost ? (
               <>
-            <Button as={Link} to={writeLink} variant="outline">
+                <Button as={Link} to={writeLink} variant="outline">
                   수정
                 </Button>
                 <Button variant="ghost" onClick={handleDeletePost}>
@@ -201,7 +202,7 @@ export const PostDetailPage = () => {
             ) : null}
             <Button
               as={Link}
-              to={post.boardType === 'CLASS' && post.classCode ? `/boards/class/${post.classCode}` : '/boards/free'}
+              to={post.boardType === 'CLASS' && post.classCode ? `/boards/jobs/${post.classCode}` : '/boards/free'}
               variant="ghost"
             >
               목록

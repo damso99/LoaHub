@@ -5,7 +5,7 @@ import { Sidebar } from '../components/Sidebar';
 
 export const AppLayout = () => {
   const location = useLocation();
-  const isLightCanvas = location.pathname.startsWith('/posts') || location.pathname === '/write';
+  const isLightCanvas = false;
 
   return (
     <div className="app-shell">

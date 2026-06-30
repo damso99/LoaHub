@@ -16,7 +16,8 @@ import { PostDetailPage } from '../pages/PostDetailPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { ProfileEditPage } from '../pages/ProfileEditPage';
 import { SignupPage } from '../pages/SignupPage';
-import { WritePage } from '../pages/WritePage';
+import { BoardListPage } from '../pages/BoardListPage';
+import { PostWritePage } from '../pages/PostWritePage';
 import { AdminRoute } from '../components/AdminRoute';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
@@ -32,7 +33,9 @@ export const AppRoutes = () => {
         <Route path="/character-search" element={<CharacterSearchPage />} />
         <Route path="/boards/free" element={<BoardsPage />} />
         <Route path="/boards/free/best" element={<BoardsPage />} />
-        <Route path="/boards/class" element={<BoardClassPage />} />
+        <Route path="/boards/jobs" element={<BoardListPage boardType="CLASS" />} />
+        <Route path="/boards/jobs/:classCode" element={<BoardListPage boardType="CLASS" />} />
+        <Route path="/boards/class" element={<Navigate to="/boards/jobs" replace />} />
         <Route path="/boards/class/:classCode" element={<BoardClassPage />} />
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
@@ -40,8 +43,9 @@ export const AppRoutes = () => {
         <Route path="/market" element={<MarketPage />} />
         <Route path="/boards" element={<Navigate to="/boards/free" replace />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/write" element={<WritePage />} />
-          <Route path="/posts/write" element={<WritePage />} />
+          <Route path="/boards/write" element={<PostWritePage />} />
+          <Route path="/write" element={<PostWritePage />} />
+          <Route path="/posts/write" element={<PostWritePage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/messages/:messageId" element={<MessageDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
