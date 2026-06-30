@@ -5,8 +5,8 @@
 <mapper namespace="com.loahub.post.PostMapper">
   <resultMap id="PostRowMap" type="com.loahub.post.model.PostRow">
     <constructor>
-      <idArg column="id" javaType="long" />
-      <arg column="board_id" javaType="long" />
+      <idArg column="id" javaType="java.lang.Long" />
+      <arg column="board_id" javaType="java.lang.Long" />
       <arg column="board_slug" javaType="string" />
       <arg column="board_type" javaType="string" />
       <arg column="board_name" javaType="string" />
@@ -14,14 +14,14 @@
       <arg column="class_name" javaType="string" />
       <arg column="category_code" javaType="string" />
       <arg column="category_name" javaType="string" />
-      <arg column="user_id" javaType="long" />
+      <arg column="user_id" javaType="java.lang.Long" />
       <arg column="author" javaType="string" />
       <arg column="title" javaType="string" />
       <arg column="content" javaType="string" />
-      <arg column="view_count" javaType="long" />
-      <arg column="like_count" javaType="long" />
-      <arg column="comment_count" javaType="long" />
-      <arg column="pinned" javaType="boolean" />
+      <arg column="view_count" javaType="java.lang.Long" />
+      <arg column="like_count" javaType="java.lang.Long" />
+      <arg column="comment_count" javaType="java.lang.Long" />
+      <arg column="pinned" javaType="java.lang.Boolean" />
       <arg column="status" javaType="string" />
       <arg column="created_at" javaType="java.time.OffsetDateTime" />
       <arg column="updated_at" javaType="java.time.OffsetDateTime" />

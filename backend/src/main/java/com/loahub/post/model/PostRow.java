@@ -3,8 +3,8 @@ package com.loahub.post.model;
 import java.time.OffsetDateTime;
 
 public record PostRow(
-    long id,
-    long boardId,
+    Long id,
+    Long boardId,
     String boardSlug,
     String boardType,
     String boardName,
@@ -12,14 +12,14 @@ public record PostRow(
     String className,
     String categoryCode,
     String categoryName,
-    long userId,
+    Long userId,
     String author,
     String title,
     String content,
-    long viewCount,
-    long likeCount,
-    long commentCount,
-    boolean pinned,
+    Long viewCount,
+    Long likeCount,
+    Long commentCount,
+    Boolean pinned,
     String status,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt
