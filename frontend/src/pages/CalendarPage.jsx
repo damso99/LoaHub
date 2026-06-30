@@ -178,6 +178,7 @@ const normalizeCalendarItem = (schedule, sectionTitle) => ({
   imageUrl: schedule.contentsIcon ?? '',
   rewardType: Array.isArray(schedule.rewards) && schedule.rewards.length > 0 ? schedule.rewards[0]?.grade ?? null : null,
   rewards: Array.isArray(schedule.rewards) ? schedule.rewards : [],
+  sourceIds: [schedule.id].filter(Boolean),
 });
 
 const groupCalendarItemsByName = (items) => {
@@ -192,17 +193,9 @@ const groupCalendarItemsByName = (items) => {
         ...item,
         occurrenceCount: 1,
         rewards: Array.isArray(item.rewards) ? [...item.rewards] : [],
+        sourceIds: Array.isArray(item.sourceIds) ? [...item.sourceIds] : item.id ? [item.id] : [],
       });
       continue;
-    }
-
-    const mergedRewards = [...(current.rewards ?? []), ...(Array.isArray(item.rewards) ? item.rewards : [])];
-    const rewardMap = new Map();
-    for (const reward of mergedRewards) {
-      const rewardKey = `${reward?.name ?? ''}|${reward?.icon ?? ''}|${reward?.grade ?? ''}`;
-      if (!rewardMap.has(rewardKey)) {
-        rewardMap.set(rewardKey, reward);
-      }
     }
 
     groups.set(key, {
@@ -211,7 +204,8 @@ const groupCalendarItemsByName = (items) => {
       imageUrl: current.imageUrl || item.imageUrl || '',
       startTime: current.startTime || item.startTime || '',
       occurrenceCount: current.occurrenceCount + 1,
-      rewards: Array.from(rewardMap.values()),
+      rewards: Array.isArray(current.rewards) && current.rewards.length > 0 ? current.rewards : Array.isArray(item.rewards) ? [...item.rewards] : [],
+      sourceIds: Array.isArray(current.sourceIds) ? [...current.sourceIds, ...(Array.isArray(item.sourceIds) ? item.sourceIds : item.id ? [item.id] : [])] : [],
     });
   }
 
