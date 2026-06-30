@@ -316,6 +316,7 @@ public class PostService {
             post.userId(),
             post.author(),
             post.title(),
+            post.content(),
             viewCount,
             post.likeCount(),
             post.commentCount(),

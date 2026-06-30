@@ -15,6 +15,7 @@ public record PostSummaryResponse(
     long userId,
     String author,
     String title,
+    String content,
     long viewCount,
     long likeCount,
     long commentCount,

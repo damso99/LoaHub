@@ -103,6 +103,48 @@ export const PostWritePage = () => {
     };
   }, [imagePreviews]);
 
+  useEffect(() => {
+    if (!postId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const response = await api.getPost(postId);
+        if (cancelled) {
+          return;
+        }
+
+        const payload = normalizeBoardPayload(response);
+        const post = payload?.post ?? payload;
+        if (!post) {
+          return;
+        }
+
+        setForm((current) => ({
+          ...current,
+          boardType: post.boardType ?? current.boardType,
+          boardSlug: post.boardSlug ?? current.boardSlug,
+          categoryCode: post.categoryCode ?? current.categoryCode,
+          jobClass: post.classCode ?? current.jobClass,
+          title: post.title ?? current.title,
+          content: post.content ?? current.content,
+          pinned: Boolean(post.pinned),
+        }));
+      } catch {
+        // 기존 게시글을 못 읽어도 작성 폼은 유지한다.
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId]);
+
   const selectedBoard = useMemo(() => {
     if (!boards.length) {
       return mockBoards[0];
