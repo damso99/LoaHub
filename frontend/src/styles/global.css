@@ -1839,6 +1839,7 @@ select {
   width: min(320px, calc(100vw - 40px));
   max-height: 320px;
   overflow: auto;
+  scrollbar-width: none;
   padding: 0;
   border-radius: 18px;
   border: 1px solid rgba(124, 184, 255, 0.24);
@@ -1847,6 +1848,15 @@ select {
     linear-gradient(180deg, rgba(22, 30, 48, 0.98), rgba(14, 20, 33, 0.98));
   box-shadow: 0 24px 48px rgba(4, 8, 16, 0.4);
   backdrop-filter: blur(16px);
+}
+
+.reward-popover::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.reward-popover::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 .reward-popover__title {

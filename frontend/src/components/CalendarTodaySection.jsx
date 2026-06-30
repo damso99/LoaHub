@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from './Badge';
 import { Card } from './Card';
 import { RewardPopover } from './RewardPopover';
@@ -65,6 +65,23 @@ const getRewardCountLabel = (rewards) => `보상 ${rewards.length}개`;
 
 export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, eyebrow = '오늘 일정' }) => {
   const [hoveredRewardKey, setHoveredRewardKey] = useState(null);
+  const closeTimerRef = useRef(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const scheduleClose = (itemKey) => {
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      setHoveredRewardKey((current) => (current === itemKey ? null : current));
+    }, 180);
+  };
+
+  useEffect(() => () => clearCloseTimer(), []);
 
   return (
     <Card className="calendar-today-section">
@@ -113,12 +130,18 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
                   <div className="calendar-today-item__reward-area">
                     <div
                       className="reward-hover-wrap"
-                      onMouseEnter={() => setHoveredRewardKey(itemKey)}
-                      onMouseLeave={() => setHoveredRewardKey((current) => (current === itemKey ? null : current))}
-                      onFocusCapture={() => setHoveredRewardKey(itemKey)}
+                      onMouseEnter={() => {
+                        clearCloseTimer();
+                        setHoveredRewardKey(itemKey);
+                      }}
+                      onMouseLeave={() => scheduleClose(itemKey)}
+                      onFocusCapture={() => {
+                        clearCloseTimer();
+                        setHoveredRewardKey(itemKey);
+                      }}
                       onBlurCapture={(event) => {
                         if (!event.currentTarget.contains(event.relatedTarget)) {
-                          setHoveredRewardKey((current) => (current === itemKey ? null : current));
+                          scheduleClose(itemKey);
                         }
                       }}
                     >
@@ -137,7 +160,11 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
                         <span className="material-symbols-outlined">keyboard_arrow_down</span>
                       </button>
 
-                      {isHovered ? <RewardPopover title={item.contentName} rewards={rewards} /> : null}
+                      {isHovered ? (
+                        <div onMouseEnter={clearCloseTimer} onMouseLeave={() => scheduleClose(itemKey)}>
+                          <RewardPopover title={item.contentName} rewards={rewards} />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
