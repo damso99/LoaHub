@@ -1,7 +1,7 @@
 package com.loahub.common.exception;
 
-import com.loahub.common.dto.ApiResponse;
 import com.loahub.auth.exception.RegistrationException;
+import com.loahub.common.dto.ApiResponse;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
         String message = exception.getBindingResult().getFieldErrors().stream()
             .findFirst()
             .map(FieldError::getDefaultMessage)
-            .orElse("입력값을 확인해주세요.");
+            .orElse("입력값을 확인해 주세요.");
         return ResponseEntity.badRequest().body(Map.of("message", message));
     }
 
@@ -54,13 +54,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, "로그인이 필요한 기능입니다.", Map.of()));
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnexpected(Exception exception) {
-        Map<String, Object> payload = new java.util.LinkedHashMap<>();
-        payload.put("detail", exception.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiResponse<>(false, "서버 오류가 발생했습니다.", payload));
-    }
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleResponseStatus(ResponseStatusException exception) {
         String message = exception.getReason();
@@ -70,5 +63,13 @@ public class GlobalExceptionHandler {
         Map<String, Object> payload = new java.util.LinkedHashMap<>();
         payload.put("detail", message);
         return ResponseEntity.status(exception.getStatusCode()).body(new ApiResponse<>(false, message, payload));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnexpected(Exception exception) {
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("detail", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ApiResponse<>(false, "서버 오류가 발생했습니다.", payload));
     }
 }

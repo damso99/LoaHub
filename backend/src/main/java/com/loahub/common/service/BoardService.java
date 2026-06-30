@@ -47,26 +47,33 @@ public class BoardService {
     }
 
     private BoardResponse toResponse(BoardRow board) {
+        BoardRow canonical = BoardCatalog.defaultBoardRow(board.slug()).orElse(board);
         return new BoardResponse(
             board.id(),
             board.slug(),
             board.boardType(),
-            board.boardName(),
-            board.classCode(),
-            board.className(),
+            canonical.boardName(),
+            canonical.classCode(),
+            canonical.className(),
             board.sortOrder(),
             loadCategories(board.boardType())
         );
     }
 
     private List<BoardCategoryResponse> loadCategories(String boardType) {
+        List<BoardCategoryResponse> canonicalCategories = BoardCatalog.defaultCategories(boardType);
+
         try {
             List<BoardCategoryResponse> categories = boardMapper.findCategoriesByBoardType(boardType).stream()
                 .map(category -> new BoardCategoryResponse(
                     category.id(),
                     category.boardType(),
                     category.categoryCode(),
-                    category.categoryName(),
+                    canonicalCategories.stream()
+                        .filter(item -> item.categoryCode().equalsIgnoreCase(category.categoryCode()))
+                        .map(BoardCategoryResponse::categoryName)
+                        .findFirst()
+                        .orElse(category.categoryName()),
                     category.sortOrder()
                 ))
                 .toList();
@@ -78,6 +85,6 @@ public class BoardService {
             log.warn("게시판 카테고리 조회에 실패하여 기본 카테고리를 사용합니다. boardType={}", boardType, exception);
         }
 
-        return BoardCatalog.defaultCategories(boardType);
+        return canonicalCategories;
     }
 }
