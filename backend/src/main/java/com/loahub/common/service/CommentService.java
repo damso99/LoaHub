@@ -12,8 +12,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class CommentService {
@@ -48,12 +50,24 @@ public class CommentService {
         command.setContent(requireText(request.content(), "댓글 내용을 입력해 주세요."));
         command.setStatus(STATUS_ACTIVE);
 
-        commentMapper.insertComment(command);
+        int inserted = commentMapper.insertComment(command);
+        if (inserted <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 저장에 실패했습니다.");
+        }
+
         postMapper.increaseCommentCount(postId);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("comment", toResponse(commentMapper.findCommentById(command.getCommentId()).orElseThrow()));
-        return ApiResponse.ok("댓글이 생성되었습니다.", payload);
+        Long commentId = command.getCommentId();
+        payload.put(
+            "comment",
+            commentId == null
+                ? null
+                : commentMapper.findCommentById(commentId).map(this::toResponse).orElse(null)
+        );
+        payload.put("commentId", commentId);
+        payload.put("created", true);
+        return ApiResponse.ok("댓글이 작성되었습니다.", payload);
     }
 
     @Transactional
