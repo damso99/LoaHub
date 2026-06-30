@@ -113,12 +113,11 @@
     LIMIT 1
   </select>
 
-  <select id="findActivePostId" resultType="java.lang.Long">
-    SELECT id
+  <select id="countActivePostById" resultType="long">
+    SELECT COUNT(*)
     FROM posts
     WHERE id = #{postId}
       AND status = 'ACTIVE'
-    LIMIT 1
   </select>
 
   <insert id="insertPost" parameterType="com.loahub.post.command.PostWriteCommand" useGeneratedKeys="true" keyProperty="postId" keyColumn="id">

@@ -11,13 +11,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.dao.DataAccessException;
 
 @Service
 public class CommentService {
+    private static final Logger log = LoggerFactory.getLogger(CommentService.class);
     private static final String STATUS_ACTIVE = "ACTIVE";
     private static final String STATUS_DELETED = "DELETED";
 
@@ -54,9 +58,13 @@ public class CommentService {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 저장에 실패했습니다.");
         }
 
-        int updated = postMapper.increaseCommentCount(postId);
-        if (updated <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 카운트를 갱신하지 못했습니다.");
+        try {
+            int updated = postMapper.increaseCommentCount(postId);
+            if (updated <= 0) {
+                log.warn("댓글 카운트 갱신 대상이 없습니다. postId={}", postId);
+            }
+        } catch (DataAccessException exception) {
+            log.warn("댓글 카운트 갱신에 실패했지만 댓글 저장은 유지합니다. postId={}", postId, exception);
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -92,9 +100,7 @@ public class CommentService {
     }
 
     private void ensureActivePost(long postId) {
-        Long foundPostId = postMapper.findActivePostId(postId)
-            .orElseThrow(() -> new NoSuchElementException("존재하지 않는 게시글입니다."));
-        if (foundPostId <= 0) {
+        if (postMapper.countActivePostById(postId) <= 0) {
             throw new NoSuchElementException("존재하지 않는 게시글입니다.");
         }
     }
