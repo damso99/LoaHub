@@ -26,6 +26,18 @@ const createPreviewItem = (file) => ({
   sizeLabel: `${Math.max(1, Math.round(file.size / 1024))}KB`,
 });
 
+const buildPostRequestBody = (form, selectedBoard) => {
+  const boardId = Number(selectedBoard?.id ?? 0);
+
+  return {
+    boardId: Number.isFinite(boardId) && boardId > 0 ? boardId : undefined,
+    categoryCode: form.categoryCode,
+    title: form.title.trim(),
+    content: form.content.trim(),
+    pinned: Boolean(form.pinned),
+  };
+};
+
 const createInitialForm = (boardSlug) => ({
   boardType: boardSlug.startsWith('class/') ? 'CLASS' : 'FREE',
   boardSlug,
@@ -217,14 +229,7 @@ export const PostWritePage = () => {
 
     try {
       setSaving(true);
-      const payload = {
-        boardSlug: form.boardSlug,
-        categoryCode: form.categoryCode,
-        title: form.title.trim(),
-        content: form.content.trim(),
-        tags: form.tags,
-        pinned: form.pinned,
-      };
+      const payload = buildPostRequestBody(form, selectedBoard);
 
       if (postId) {
         const response = await api.updatePost(postId, payload);

@@ -120,6 +120,18 @@ const normalizeCommentMock = (comment, postId) => ({
   updatedAt: comment.updatedAt ?? comment.createdAt,
 });
 
+const buildPostRequestBody = (payload = {}) => {
+  const boardId = Number(payload.boardId ?? Object.entries(boardSlugById).find(([, slug]) => slug === payload.boardSlug)?.[0] ?? 0);
+
+  return {
+    boardId: Number.isFinite(boardId) && boardId > 0 ? boardId : undefined,
+    categoryCode: payload.categoryCode,
+    title: payload.title,
+    content: payload.content,
+    pinned: Boolean(payload.pinned),
+  };
+};
+
 export const api = {
   async searchCharacters(characterName) {
     const encodedCharacterName = encodeURIComponent(String(characterName ?? '').trim());
@@ -336,7 +348,7 @@ export const api = {
   },
   async createPost(payload) {
     try {
-      return await apiClient.post('/api/posts', payload);
+      return await apiClient.post('/api/posts', buildPostRequestBody(payload));
     } catch {
       if (useMock) {
         const post = {
@@ -368,7 +380,7 @@ export const api = {
   },
   async updatePost(postId, payload) {
     try {
-      return await apiClient.put(`/api/posts/${postId}`, payload);
+      return await apiClient.put(`/api/posts/${postId}`, buildPostRequestBody(payload));
     } catch {
       if (useMock) {
         return delay({
