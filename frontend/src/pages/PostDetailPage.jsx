@@ -230,7 +230,7 @@ export const PostDetailPage = () => {
 
         <form className="comment-form" onSubmit={handleCommentSubmit}>
           <Input
-            placeholder="댓글을 입력해 주세요."
+            placeholder="댓글 내용을 입력해 주세요."
             value={commentContent}
             onChange={(event) => setCommentContent(event.target.value)}
           />

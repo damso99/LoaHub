@@ -298,16 +298,21 @@ public class PostService {
     }
 
     private PostSummaryResponse toSummaryResponse(PostRow post, long viewCount) {
+        BoardRow canonicalBoard = BoardCatalog.defaultBoardRow(post.boardSlug()).orElse(null);
+        String boardName = canonicalBoard != null ? canonicalBoard.boardName() : post.boardName();
+        String className = canonicalBoard != null ? canonicalBoard.className() : post.className();
+        String categoryName = canonicalCategoryName(post.boardType(), post.categoryCode(), post.categoryName());
+
         return new PostSummaryResponse(
             post.id(),
             post.boardId(),
             post.boardSlug(),
             post.boardType(),
-            post.boardName(),
+            boardName,
             post.classCode(),
-            post.className(),
+            className,
             post.categoryCode(),
-            post.categoryName(),
+            categoryName,
             post.userId(),
             post.author(),
             post.title(),
@@ -319,6 +324,18 @@ public class PostService {
             post.createdAt(),
             post.updatedAt()
         );
+    }
+
+    private String canonicalCategoryName(String boardType, String categoryCode, String fallback) {
+        if (categoryCode == null || categoryCode.isBlank()) {
+            return fallback;
+        }
+
+        return BoardCatalog.defaultCategories(boardType).stream()
+            .filter(category -> category.categoryCode().equalsIgnoreCase(categoryCode))
+            .map(com.loahub.board.dto.BoardCategoryResponse::categoryName)
+            .findFirst()
+            .orElse(fallback);
     }
 
     private CommentResponse toCommentResponse(com.loahub.comment.model.CommentRow comment) {
