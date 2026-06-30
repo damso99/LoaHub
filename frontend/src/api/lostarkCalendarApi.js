@@ -1,6 +1,9 @@
+import { api } from './client';
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const FIXED_SLOTS = ['11:00', '13:00', '19:00', '21:00', '23:00'];
+const hasSupabaseEnv = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 const selectFields = [
   'id',
@@ -110,6 +113,48 @@ const groupBySlot = (items) => {
   }));
 };
 
+const normalizeBackendSchedule = (row) => ({
+  id: row?.id,
+  weekStartDate: row?.weekStartDate ?? row?.week_start_date ?? null,
+  weekEndDate: row?.weekEndDate ?? row?.week_end_date ?? null,
+  categoryName: row?.categoryName ?? row?.category_name ?? '',
+  contentsName: row?.contentsName ?? row?.contents_name ?? '',
+  contentsIcon: row?.contentsIcon ?? row?.contents_icon ?? '',
+  minItemLevel: row?.minItemLevel ?? row?.min_item_level ?? null,
+  location: row?.location ?? '',
+  startTimeKst: row?.startTimeKst ?? row?.start_time_kst ?? null,
+  startDate: row?.startDate ?? row?.start_date ?? null,
+  startHhmm: row?.startHhmm ?? row?.start_hhmm ?? null,
+  slotHhmm: row?.slotHhmm ?? row?.slot_hhmm ?? null,
+  rewards: Array.isArray(row?.rewards) ? row.rewards.map(normalizeReward) : [],
+  rawContent: row?.rawContent ?? row?.raw_content ?? null,
+});
+
+const normalizeBackendWeek = (payload) => {
+  const days = Array.isArray(payload?.days) ? payload.days : [];
+  const items = [];
+
+  for (const day of days) {
+    const groups = Array.isArray(day?.groups) ? day.groups : [];
+    for (const group of groups) {
+      const groupItems = Array.isArray(group?.items) ? group.items : [];
+      for (const item of groupItems) {
+        items.push({
+          ...normalizeBackendSchedule(item),
+          startDate: day?.date ?? item?.startDate ?? item?.start_date ?? null,
+          slotHhmm: group?.slotHhmm ?? item?.slotHhmm ?? item?.slot_hhmm ?? null,
+        });
+      }
+    }
+  }
+
+  return {
+    weekStartDate: payload?.weekStartDate ?? payload?.week_start_date ?? days[0]?.date ?? null,
+    weekEndDate: payload?.weekEndDate ?? payload?.week_end_date ?? days.at(-1)?.date ?? null,
+    items,
+  };
+};
+
 export const getLostArkCalendarToday = async () => {
   const date = formatKstDate();
   const params = new URLSearchParams({
@@ -129,6 +174,20 @@ export const getLostArkCalendarToday = async () => {
 };
 
 export const getLostArkCalendarWeek = async () => {
+  try {
+    const response = await api.getLostArkCalendarWeek();
+    const payload = response?.data?.data ?? response?.data ?? response;
+    return normalizeBackendWeek(payload);
+  } catch {
+    if (!hasSupabaseEnv) {
+      return {
+        weekStartDate: null,
+        weekEndDate: null,
+        items: [],
+      };
+    }
+  }
+
   const params = new URLSearchParams({
     select: selectFields,
     is_active: 'eq.true',
