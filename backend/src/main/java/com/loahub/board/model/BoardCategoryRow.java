@@ -3,11 +3,11 @@ package com.loahub.board.model;
 import java.time.OffsetDateTime;
 
 public record BoardCategoryRow(
-    long id,
+    Long id,
     String boardType,
     String categoryCode,
     String categoryName,
-    int sortOrder,
+    Integer sortOrder,
     String status,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt

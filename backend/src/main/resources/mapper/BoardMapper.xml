@@ -5,13 +5,13 @@
 <mapper namespace="com.loahub.board.BoardMapper">
   <resultMap id="BoardRowMap" type="com.loahub.board.model.BoardRow">
     <constructor>
-      <idArg column="id" javaType="long" />
+      <idArg column="id" javaType="java.lang.Long" />
       <arg column="slug" javaType="string" />
       <arg column="board_type" javaType="string" />
       <arg column="board_name" javaType="string" />
       <arg column="class_code" javaType="string" />
       <arg column="class_name" javaType="string" />
-      <arg column="sort_order" javaType="int" />
+      <arg column="sort_order" javaType="java.lang.Integer" />
       <arg column="status" javaType="string" />
       <arg column="created_at" javaType="java.time.OffsetDateTime" />
       <arg column="updated_at" javaType="java.time.OffsetDateTime" />
@@ -20,11 +20,11 @@
 
   <resultMap id="BoardCategoryRowMap" type="com.loahub.board.model.BoardCategoryRow">
     <constructor>
-      <idArg column="id" javaType="long" />
+      <idArg column="id" javaType="java.lang.Long" />
       <arg column="board_type" javaType="string" />
       <arg column="category_code" javaType="string" />
       <arg column="category_name" javaType="string" />
-      <arg column="sort_order" javaType="int" />
+      <arg column="sort_order" javaType="java.lang.Integer" />
       <arg column="status" javaType="string" />
       <arg column="created_at" javaType="java.time.OffsetDateTime" />
       <arg column="updated_at" javaType="java.time.OffsetDateTime" />
