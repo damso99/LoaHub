@@ -356,7 +356,7 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
       {error ? <Card className="board-error-card">{error}</Card> : null}
 
       <div className="board-content-grid">
-        <section className="board-list-column">
+        <section className="board-list-column post-list-section">
           <Card className="post-list-card">
             <div className="post-list-card__header">
               <div>

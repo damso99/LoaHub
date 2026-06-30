@@ -5,13 +5,13 @@ const formatCount = (value) => Number(value ?? 0).toLocaleString();
 
 export const BoardSidebar = ({ hotPosts = [], recentComments = [], onlineMembers = [] }) => {
   return (
-    <aside className="board-sidebar">
-      <Card className="board-sidebar-card">
-        <div className="board-sidebar-card__header">
+    <aside className="board-side-panel">
+      <Card className="board-side-card">
+        <div className="board-side-card__header">
           <p className="board-eyebrow">HOT</p>
           <h3>인기글</h3>
         </div>
-        <div className="board-sidebar-card__list">
+        <div className="board-side-card__list">
           {hotPosts.map((post) => (
             <div key={post.id} className="sidebar-mini-post">
               <strong>{post.title}</strong>
@@ -21,12 +21,12 @@ export const BoardSidebar = ({ hotPosts = [], recentComments = [], onlineMembers
         </div>
       </Card>
 
-      <Card className="board-sidebar-card">
-        <div className="board-sidebar-card__header">
+      <Card className="board-side-card">
+        <div className="board-side-card__header">
           <p className="board-eyebrow">COMMENT</p>
           <h3>최근 댓글</h3>
         </div>
-        <div className="board-sidebar-card__list">
+        <div className="board-side-card__list">
           {recentComments.map((item) => (
             <div key={item.id} className="sidebar-mini-comment">
               <strong>{item.author}</strong>
@@ -37,8 +37,8 @@ export const BoardSidebar = ({ hotPosts = [], recentComments = [], onlineMembers
         </div>
       </Card>
 
-      <Card className="board-sidebar-card">
-        <div className="board-sidebar-card__header">
+      <Card className="board-side-card">
+        <div className="board-side-card__header">
           <p className="board-eyebrow">ONLINE</p>
           <h3>접속 중인 모험가</h3>
         </div>

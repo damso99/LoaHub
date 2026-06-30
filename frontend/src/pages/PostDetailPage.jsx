@@ -4,7 +4,6 @@ import { api } from '../api/client';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { Input } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 
@@ -153,13 +152,20 @@ export const PostDetailPage = () => {
     return `/boards/write?board=${encodeURIComponent(post.boardSlug)}&postId=${post.id}`;
   }, [post]);
 
+  const boardPath = post?.boardType === 'CLASS' && post?.classCode ? `/boards/jobs/${post.classCode}` : '/boards/free';
+  const postAuthor = post?.author ?? post?.writer ?? '작성자';
+  const postMeta = [postAuthor, formatDateTime(post?.createdAt), `조회 ${Number(post?.viewCount ?? 0).toLocaleString()}`, `추천 ${Number(post?.likeCount ?? 0).toLocaleString()}`
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   if (loading) {
     return (
-      <div className="page-stack board-page">
+      <div className="page-stack post-detail-page">
         <PageHeader title="게시글 상세" description="게시글 정보를 불러오는 중입니다." />
         <Card className="empty-state empty-panel">
           <h2 className="empty-panel__title">게시글을 불러오는 중입니다.</h2>
-          <p className="empty-panel__desc">댓글과 추천 수를 포함한 상세 정보를 조회하고 있습니다.</p>
+          <p className="empty-panel__desc">댓글과 추천 정보를 함께 조회하고 있습니다.</p>
         </Card>
       </div>
     );
@@ -167,7 +173,7 @@ export const PostDetailPage = () => {
 
   if (error || !post) {
     return (
-      <div className="page-stack board-page">
+      <div className="page-stack post-detail-page">
         <PageHeader title="게시글 상세" description="게시글 정보를 불러오지 못했습니다." />
         <Card className="empty-state empty-panel">
           <h2 className="empty-panel__title">게시글을 찾을 수 없습니다.</h2>
@@ -182,78 +188,82 @@ export const PostDetailPage = () => {
 
   return (
     <div className="page-stack post-detail-page">
-      <PageHeader
-        title={post.title}
-        description={`${post.author} · ${formatDateTime(post.createdAt)} · 조회 ${Number(post.viewCount ?? 0).toLocaleString()} · 추천 ${Number(post.likeCount ?? 0).toLocaleString()}`}
-        action={
-          <div className="inline-actions">
-            <Button variant="secondary" onClick={handleLike}>
+      <div className="post-detail-shell">
+        <section className="post-detail-hero">
+          <div className="post-detail-title-block">
+            <p className="eyebrow">LoaHub Community</p>
+            <h1>{post.title}</h1>
+            <div className="post-detail-meta">{postMeta}</div>
+          </div>
+
+          <div className="post-detail-actions">
+            <Button variant="outline" onClick={handleLike} className="post-action-btn post-action-btn--primary">
               추천 {Number(post.likeCount ?? 0).toLocaleString()}
             </Button>
             {canManagePost ? (
               <>
-                <Button as={Link} to={writeLink} variant="outline">
+                <Button as={Link} to={writeLink} variant="outline" className="post-action-btn">
                   수정
                 </Button>
-                <Button variant="ghost" onClick={handleDeletePost}>
+                <Button variant="danger" onClick={handleDeletePost} className="post-action-btn">
                   삭제
                 </Button>
               </>
             ) : null}
-            <Button
-              as={Link}
-              to={post.boardType === 'CLASS' && post.classCode ? `/boards/jobs/${post.classCode}` : '/boards/free'}
-              variant="ghost"
-            >
+            <Button as={Link} to={boardPath} variant="ghost" className="post-action-btn post-action-btn--muted">
               목록
             </Button>
           </div>
-        }
-      />
+        </section>
 
-      <Card className="post-detail">
-        <div className="post-detail__badges">
-          <Badge tone={post.pinned ? 'primary' : 'neutral'}>{post.pinned ? '공지' : post.categoryName}</Badge>
-          <Badge tone="neutral">{post.boardName}</Badge>
-          {post.boardType === 'CLASS' ? <Badge tone="neutral">{post.className}</Badge> : null}
-        </div>
-        <p className="post-detail__content">{post.content}</p>
-      </Card>
-
-      <Card className="comment-card">
-        <div className="section-card__header">
-          <div>
-            <p className="eyebrow">댓글</p>
-            <h2>댓글 {comments.length}</h2>
+        <Card className="post-content-card">
+          <div className="post-badge-row">
+            <Badge tone={post.isNotice ? 'primary' : 'neutral'}>{post.isNotice ? '공지' : post.categoryName}</Badge>
+            <Badge tone="neutral">{post.boardName}</Badge>
+            {post.boardType === 'CLASS' ? <Badge tone="neutral">{post.className}</Badge> : null}
           </div>
-        </div>
 
-        <form className="comment-form" onSubmit={handleCommentSubmit}>
-          <Input
-            placeholder="댓글 내용을 입력해 주세요."
-            value={commentContent}
-            onChange={(event) => setCommentContent(event.target.value)}
-          />
-          <Button type="submit">작성</Button>
-        </form>
+          <p className="post-body">{post.content}</p>
+        </Card>
 
-        <div className="comment-list">
-          {comments.map((item) => (
-            <div key={item.id} className="comment-item">
-              <strong>{item.author}</strong>
-              <p>{item.content}</p>
-              <div className="comment-item__footer">
-                <span>{formatDateTime(item.createdAt)}</span>
-                {isAdmin || user?.id === item.userId ? (
-                  <button type="button" className="text-button" onClick={() => handleDeleteComment(item.id)}>
-                    삭제
-                  </button>
-                ) : null}
-              </div>
+        <Card className="comment-section-card">
+          <div className="comment-header">
+            <div>
+              <p className="eyebrow">댓글</p>
+              <h2>댓글 {comments.length}</h2>
             </div>
-          ))}
-        </div>
-      </Card>
+          </div>
+
+          <form className="comment-form" onSubmit={handleCommentSubmit}>
+            <input
+              className="comment-input"
+              placeholder="댓글 내용을 입력해 주세요."
+              value={commentContent}
+              onChange={(event) => setCommentContent(event.target.value)}
+            />
+            <Button type="submit" className="comment-submit-btn">
+              작성
+            </Button>
+          </form>
+
+          <div className="comment-list">
+            {comments.map((item) => (
+              <div key={item.id} className="comment-item">
+                <strong>{item.author}</strong>
+                <p>{item.content}</p>
+                <div className="comment-item__footer">
+                  <span>{formatDateTime(item.createdAt)}</span>
+                  {isAdmin || user?.id === item.userId ? (
+                    <button type="button" className="text-button" onClick={() => handleDeleteComment(item.id)}>
+                      삭제
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

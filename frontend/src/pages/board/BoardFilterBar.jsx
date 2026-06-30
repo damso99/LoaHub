@@ -22,14 +22,14 @@ export const BoardFilterBar = ({
 }) => {
   return (
     <section className="board-filter-card">
-      <div className="board-filter-card__grid">
+      <div className="board-filter-grid">
         <label className="board-field board-field--search">
           <span className="board-field__label">검색</span>
           <input
             className="board-input board-input--search"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="제목, 작성자, 내용으로 검색"
+            placeholder="제목, 작성자 검색"
           />
         </label>
 
@@ -57,7 +57,7 @@ export const BoardFilterBar = ({
         </label>
       </div>
 
-      <div className="board-filter-card__tabs">
+      <div className="board-category-tabs">
         {filterTabs.map((item) => (
           <Button
             key={item.key}
