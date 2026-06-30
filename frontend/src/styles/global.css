@@ -1726,7 +1726,7 @@ select {
   border: 1px solid rgba(148, 163, 184, 0.09);
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .calendar-today-item__media {
@@ -1787,38 +1787,138 @@ select {
   white-space: nowrap;
 }
 
-.calendar-today-item__reward-text {
-  margin: 0;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
-.calendar-today-item__rewards {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 2px;
-  scrollbar-width: thin;
-  min-width: 0;
+.calendar-today-item__reward-area {
+  position: relative;
+  width: fit-content;
   max-width: 100%;
 }
 
-.calendar-today-item__reward {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+.calendar-today-item__reward-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 184, 255, 0.18);
+  background: rgba(12, 18, 31, 0.9);
+  color: var(--text-main);
+  cursor: pointer;
 }
 
-.calendar-today-item__reward img {
+.calendar-today-item__reward-button:hover {
+  border-color: rgba(124, 184, 255, 0.32);
+  background: rgba(20, 28, 44, 0.96);
+  box-shadow: 0 10px 20px rgba(6, 10, 20, 0.22);
+}
+
+.calendar-today-item__reward-button .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.calendar-today-item__reward-popover {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(320px, calc(100vw - 48px));
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 184, 255, 0.2);
+  background:
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(22, 30, 48, 0.98), rgba(14, 20, 33, 0.98));
+  box-shadow: 0 24px 48px rgba(4, 8, 16, 0.4);
+  backdrop-filter: blur(16px);
+}
+
+.calendar-today-item__reward-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calendar-today-item__reward-popover-header strong {
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.calendar-today-item__reward-popover-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(124, 184, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(12, 18, 31, 0.9);
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.calendar-today-item__reward-popover-close .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.calendar-today-item__reward-list {
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-today-item__reward-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 11px;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 184, 255, 0.12);
+  background: rgba(12, 18, 31, 0.72);
+}
+
+.calendar-today-item__reward-entry-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(124, 184, 255, 0.12);
+  color: var(--primary);
+}
+
+.calendar-today-item__reward-entry-icon img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 10px;
+}
+
+.calendar-today-item__reward-entry-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.calendar-today-item__reward-entry-copy strong,
+.calendar-today-item__reward-entry-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-today-item__reward-entry-copy strong {
+  color: var(--text-main);
+}
+
+.calendar-today-item__reward-entry-copy span {
+  color: var(--text-muted);
+  font-size: 0.84rem;
 }
 
 .calendar-timeline {
