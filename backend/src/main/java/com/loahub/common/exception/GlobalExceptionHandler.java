@@ -4,6 +4,8 @@ import com.loahub.auth.exception.RegistrationException;
 import com.loahub.common.dto.ApiResponse;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,8 +18,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(RegistrationException.class)
     public ResponseEntity<Map<String, String>> handleRegistration(RegistrationException exception) {
+        log.warn("Registration failed: {}", exception.getMessage(), exception);
         return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
     }
 
@@ -27,16 +32,19 @@ public class GlobalExceptionHandler {
             .findFirst()
             .map(FieldError::getDefaultMessage)
             .orElse("입력값을 확인해 주세요.");
+        log.warn("Validation failed: {}", message, exception);
         return ResponseEntity.badRequest().body(Map.of("message", message));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleIllegalArgument(IllegalArgumentException exception) {
+        log.warn("Illegal argument: {}", exception.getMessage(), exception);
         return ResponseEntity.badRequest().body(new ApiResponse<>(false, exception.getMessage(), Map.of()));
     }
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleNotFound(NoSuchElementException exception) {
+        log.warn("Not found: {}", exception.getMessage(), exception);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, exception.getMessage(), Map.of()));
     }
 
@@ -46,11 +54,13 @@ public class GlobalExceptionHandler {
         if (message == null || message.isBlank()) {
             message = "권한이 없습니다.";
         }
+        log.warn("Access denied: {}", message, exception);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse<>(false, message, Map.of()));
     }
 
     @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleAuthenticationMissing(AuthenticationCredentialsNotFoundException exception) {
+        log.warn("Authentication missing: {}", exception.getMessage(), exception);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, "로그인이 필요한 기능입니다.", Map.of()));
     }
 
@@ -60,6 +70,7 @@ public class GlobalExceptionHandler {
         if (message == null || message.isBlank()) {
             message = "요청을 처리할 수 없습니다.";
         }
+        log.warn("Response status exception: status={}, message={}", exception.getStatusCode(), message, exception);
         Map<String, Object> payload = new java.util.LinkedHashMap<>();
         payload.put("detail", message);
         return ResponseEntity.status(exception.getStatusCode()).body(new ApiResponse<>(false, message, payload));
@@ -67,6 +78,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleUnexpected(Exception exception) {
+        log.error("Unhandled exception", exception);
         Map<String, Object> payload = new java.util.LinkedHashMap<>();
         payload.put("detail", exception.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

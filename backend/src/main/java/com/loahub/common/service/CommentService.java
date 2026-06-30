@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.dao.DataAccessException;
 
 @Service
 public class CommentService {
@@ -34,16 +34,21 @@ public class CommentService {
     }
 
     public ApiResponse<List<CommentResponse>> getComments(long postId) {
+        log.info("댓글 조회 시작. postId={}", postId);
         ensureActivePost(postId);
+
         List<CommentResponse> comments = commentMapper.findCommentsByPostId(postId).stream()
             .map(this::toResponse)
             .toList();
+
+        log.info("댓글 조회 완료. postId={}, count={}", postId, comments.size());
         return ApiResponse.ok("댓글을 불러왔습니다.", comments);
     }
 
     @Transactional
     public ApiResponse<Map<String, Object>> create(long postId, CommentRequest request) {
         var currentUser = SecurityUtils.requireCurrentUser();
+        log.info("댓글 작성 시작. postId={}, userId={}, nickname={}", postId, currentUser.userId(), currentUser.nickname());
         ensureActivePost(postId);
 
         CommentWriteCommand command = new CommentWriteCommand();
@@ -53,9 +58,14 @@ public class CommentService {
         command.setContent(requireText(request.content(), "댓글 내용을 입력해 주세요."));
         command.setStatus(STATUS_ACTIVE);
 
-        int inserted = commentMapper.insertComment(command);
-        if (inserted <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 저장에 실패했습니다.");
+        try {
+            int inserted = commentMapper.insertComment(command);
+            if (inserted <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 저장에 실패했습니다.");
+            }
+        } catch (DataAccessException exception) {
+            log.error("댓글 insert 실패. postId={}, userId={}, nickname={}", postId, currentUser.userId(), currentUser.nickname(), exception);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "댓글 저장에 실패했습니다.", exception);
         }
 
         try {
@@ -64,7 +74,7 @@ public class CommentService {
                 log.warn("댓글 카운트 갱신 대상이 없습니다. postId={}", postId);
             }
         } catch (DataAccessException exception) {
-            log.warn("댓글 카운트 갱신에 실패했지만 댓글 저장은 유지합니다. postId={}", postId, exception);
+            log.error("댓글 카운트 갱신 실패. postId={}", postId, exception);
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -77,12 +87,15 @@ public class CommentService {
         );
         payload.put("commentId", commentId);
         payload.put("created", true);
+        log.info("댓글 작성 완료. postId={}, commentId={}", postId, commentId);
         return ApiResponse.ok("댓글이 작성되었습니다.", payload);
     }
 
     @Transactional
     public ApiResponse<Map<String, Object>> delete(long commentId) {
         SecurityUtils.requireCurrentUser();
+        log.info("댓글 삭제 시작. commentId={}", commentId);
+
         var comment = commentMapper.findCommentById(commentId)
             .orElseThrow(() -> new NoSuchElementException("존재하지 않는 댓글입니다."));
         if (!STATUS_ACTIVE.equals(comment.status())) {
@@ -96,6 +109,7 @@ public class CommentService {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("deleted", true);
         payload.put("commentId", commentId);
+        log.info("댓글 삭제 완료. commentId={}", commentId);
         return ApiResponse.ok("댓글이 삭제되었습니다.", payload);
     }
 
