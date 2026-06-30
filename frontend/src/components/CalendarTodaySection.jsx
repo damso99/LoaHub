@@ -3,7 +3,7 @@ import { Card } from './Card';
 
 const formatRewardList = (rewards) => (Array.isArray(rewards) ? rewards : []);
 
-export const CalendarTodaySection = ({ title, icon, tone, items, countdownText }) => {
+export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, eyebrow = '오늘 일정' }) => {
   return (
     <Card className="calendar-today-section">
       <div className="calendar-today-section__header">
@@ -12,7 +12,7 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText }
             {icon}
           </span>
           <div>
-            <p className="calendar-today-section__eyebrow">오늘 일정</p>
+            <p className="calendar-today-section__eyebrow">{eyebrow}</p>
             <h2>{title}</h2>
           </div>
         </div>

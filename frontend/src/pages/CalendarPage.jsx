@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api } from '../api/client';
+import { getLostArkCalendarWeek } from '../api/lostarkCalendarApi';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { CalendarTodaySection } from '../components/CalendarTodaySection';
@@ -43,23 +43,79 @@ const addDays = (dateKey, amount) => {
   return `${nextYear}-${nextMonth}-${nextDay}`;
 };
 
-const buildWeekDays = () => {
-  const { dateKey: todayKey, weekdayIndex } = getKstDateParts();
-  const mondayOffset = (weekdayIndex + 6) % 7;
-  const mondayKey = addDays(todayKey, -mondayOffset);
+const buildWeekDaysFromRange = (weekStartDate, weekEndDate) => {
+  if (!weekStartDate || !weekEndDate) {
+    return [];
+  }
 
-  return Array.from({ length: 7 }, (_, index) => {
-    const dateKey = addDays(mondayKey, index);
-    const dayIndex = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
-    return {
-      dateKey,
+  const todayKey = getKstDateParts().dateKey;
+  const start = weekStartDate;
+  const end = weekEndDate;
+  const days = [];
+
+  let cursor = start;
+  while (cursor <= end) {
+    const dayIndex = new Date(`${cursor}T00:00:00Z`).getUTCDay();
+    days.push({
+      dateKey: cursor,
       dayLabel: WEEKDAY_LABELS[dayIndex],
-      dayNumber: Number(dateKey.slice(8, 10)),
-      isToday: dateKey === todayKey,
+      dayNumber: Number(cursor.slice(8, 10)),
+      isToday: cursor === todayKey,
       isSaturday: dayIndex === 6,
       isSunday: dayIndex === 0,
-    };
-  });
+    });
+    cursor = addDays(cursor, 1);
+  }
+
+  return days;
+};
+
+const normalizeKey = (value) =>
+  String(value ?? '')
+    .trim()
+    .replaceAll(/[\s_-]/g, '')
+    .toUpperCase();
+
+const resolveSectionKey = (schedule) => {
+  const candidates = [schedule.categoryName, schedule.contentsName, schedule.rawContent].map(normalizeKey);
+
+  if (candidates.some((value) => value.includes('모험섬') || value === 'ADVENTUREISLAND')) {
+    return 'adventureIslands';
+  }
+  if (candidates.some((value) => value.includes('필드보스') || value.includes('필보') || value === 'FIELDBOSS')) {
+    return 'fieldBosses';
+  }
+  if (candidates.some((value) => value.includes('카오스게이트') || value.includes('카오스') || value === 'CHAOSGATE')) {
+    return 'chaosGates';
+  }
+
+  return null;
+};
+
+const formatSelectedDateLabel = (dateKey) => {
+  if (!dateKey) {
+    return '-';
+  }
+
+  const date = new Date(`${dateKey}T00:00:00+09:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dateKey;
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  }).format(date);
+};
+
+const formatShortTime = (value) => {
+  const text = String(value ?? '').trim();
+  if (!text) {
+    return '-';
+  }
+
+  return text.length >= 5 ? text.slice(0, 5) : text;
 };
 
 const parseKstDateTime = (value) => {
@@ -92,9 +148,13 @@ const formatCountdown = (startTime, now) => {
   return `시작까지 ${hours}:${minutes}:${seconds}`;
 };
 
-const getSectionCountdown = (items, now) => {
+const getSectionBadgeText = (items, selectedDate, now, todayKey) => {
   if (!Array.isArray(items) || items.length === 0) {
-    return '오늘 일정이 없습니다.';
+    return '일정 없음';
+  }
+
+  if (selectedDate !== todayKey) {
+    return `총 ${items.length}개`;
   }
 
   const sortedTimes = items
@@ -103,47 +163,67 @@ const getSectionCountdown = (items, now) => {
     .sort((left, right) => left.getTime() - right.getTime());
 
   if (sortedTimes.length === 0) {
-    return '오늘 일정이 없습니다.';
+    return `총 ${items.length}개`;
   }
 
   const upcoming = sortedTimes.find((time) => time.getTime() > now.getTime()) ?? sortedTimes[0];
-  return formatCountdown(upcoming.toISOString(), now);
+  return formatCountdown(upcoming.toISOString(), now) || `총 ${items.length}개`;
 };
+
+const normalizeCalendarItem = (schedule, sectionTitle) => ({
+  id: schedule.id,
+  contentName: schedule.contentsName ?? '-',
+  contentType: sectionTitle,
+  startTime: formatShortTime(schedule.startHhmm ?? schedule.startTimeKst),
+  imageUrl: schedule.contentsIcon ?? '',
+  rewardType: Array.isArray(schedule.rewards) && schedule.rewards.length > 0 ? schedule.rewards[0]?.grade ?? null : null,
+  rewards: Array.isArray(schedule.rewards) ? schedule.rewards : [],
+});
 
 export const CalendarPage = () => {
   const todayKey = useMemo(() => getKstDateParts().dateKey, []);
-  const [calendarToday, setCalendarToday] = useState(null);
+  const [calendarWeek, setCalendarWeek] = useState({ weekStartDate: null, weekEndDate: null, items: [] });
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [loading, setLoading] = useState(true);
   const [showSlowLoadingHint, setShowSlowLoadingHint] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [nowTick, setNowTick] = useState(() => new Date());
 
-  const loadCalendar = useCallback(async (dateKey = todayKey) => {
+  const loadCalendar = useCallback(async () => {
     setLoading(true);
     setErrorMessage('');
     setShowSlowLoadingHint(false);
 
     try {
-      const response =
-        dateKey === todayKey
-          ? await api.getLostArkCalendarToday()
-          : await api.getLostArkCalendarDate(dateKey);
-      const payload = response?.data?.data ?? response?.data ?? {};
-      setCalendarToday(payload);
+      const response = await getLostArkCalendarWeek();
+      const payload = response?.data?.data ?? response?.data ?? response ?? {};
+      const items = Array.isArray(payload.items) ? payload.items : [];
+
+      setCalendarWeek({
+        weekStartDate: payload.weekStartDate ?? items[0]?.weekStartDate ?? null,
+        weekEndDate: payload.weekEndDate ?? items.at(-1)?.weekEndDate ?? null,
+        items,
+      });
+
+      const availableDates = Array.from(new Set(items.map((item) => item.startDate).filter(Boolean))).sort();
+      setSelectedDate((current) => {
+        if (current && availableDates.includes(current)) {
+          return current;
+        }
+        return availableDates[0] ?? todayKey;
+      });
     } catch (error) {
       const isTimeout =
         error?.code === 'ECONNABORTED' ||
         String(error?.message ?? '').toLowerCase().includes('timeout');
       const message =
         (isTimeout
-          ? '검색 시간이 초과되었습니다. 서버가 준비 중일 수 있으니 잠시 후 다시 시도해 주세요.'
+          ? '검색 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.'
           : null) ||
-        error?.response?.data?.message ||
-        error?.response?.data?.detail ||
         error?.message ||
         '캘린더 데이터를 불러오지 못했습니다.';
-      setCalendarToday(null);
+
+      setCalendarWeek({ weekStartDate: null, weekEndDate: null, items: [] });
       setErrorMessage(message);
     } finally {
       setLoading(false);
@@ -151,8 +231,8 @@ export const CalendarPage = () => {
   }, [todayKey]);
 
   useEffect(() => {
-    void loadCalendar(selectedDate);
-  }, [loadCalendar, selectedDate]);
+    void loadCalendar();
+  }, [loadCalendar]);
 
   useEffect(() => {
     if (!loading) {
@@ -169,26 +249,43 @@ export const CalendarPage = () => {
     return () => window.clearInterval(timer);
   }, []);
 
-  const weekDays = useMemo(() => buildWeekDays(), []);
+  const weekDays = useMemo(
+    () => buildWeekDaysFromRange(calendarWeek.weekStartDate, calendarWeek.weekEndDate),
+    [calendarWeek.weekEndDate, calendarWeek.weekStartDate],
+  );
+
+  const selectedDayItems = useMemo(
+    () => calendarWeek.items.filter((item) => item.startDate === selectedDate),
+    [calendarWeek.items, selectedDate],
+  );
 
   const sectionData = useMemo(
     () =>
-      SECTION_CONFIG.map((section) => ({
-        ...section,
-        items: Array.isArray(calendarToday?.[section.key]) ? calendarToday[section.key] : [],
-      })),
-    [calendarToday],
+      SECTION_CONFIG.map((section) => {
+        const items = selectedDayItems
+          .filter((item) => resolveSectionKey(item) === section.key)
+          .map((item) => normalizeCalendarItem(item, section.title));
+
+        return {
+          ...section,
+          items,
+          badgeText: getSectionBadgeText(items, selectedDate, nowTick, todayKey),
+        };
+      }),
+    [nowTick, selectedDayItems, selectedDate, todayKey],
   );
 
-  const handleSelectDate = (dateKey) => {
-    setSelectedDate(dateKey);
-  };
+  const hasWeekData = calendarWeek.items.length > 0 && weekDays.length > 0;
+  const weekRangeText =
+    calendarWeek.weekStartDate && calendarWeek.weekEndDate
+      ? `${formatSelectedDateLabel(calendarWeek.weekStartDate)} - ${formatSelectedDateLabel(calendarWeek.weekEndDate)}`
+      : '주간 일정';
 
   return (
     <div className="page-stack calendar-page">
       <PageHeader
-        title="로스트아크 오늘 일정"
-        description="DB에 저장된 오늘자 로스트아크 일정만 모아 모험 섬, 필드 보스, 카오스게이트를 보여줍니다."
+        title="로스트아크 주간 일정"
+        description="일주일치 일정을 한 번에 불러와서 날짜를 누르면 그날 일정을 바로 확인할 수 있습니다."
         action={<Button variant="secondary" onClick={() => void loadCalendar()}>새로고침</Button>}
       />
 
@@ -196,9 +293,9 @@ export const CalendarPage = () => {
         <div className="calendar-today-toolbar__header">
           <div>
             <h2>이번 주 날짜</h2>
-            <p>오늘 날짜를 보라색으로 강조했습니다.</p>
+            <p>{weekRangeText}</p>
           </div>
-          <Badge tone="primary">{selectedDate}</Badge>
+          <Badge tone="primary">{formatSelectedDateLabel(selectedDate)}</Badge>
         </div>
 
         <div className="calendar-week-bar" role="list" aria-label="이번 주 날짜 선택 바">
@@ -214,7 +311,7 @@ export const CalendarPage = () => {
                 day.isSaturday ? 'is-saturday' : '',
                 day.isSunday ? 'is-sunday' : '',
               ].join(' ')}
-              onClick={() => handleSelectDate(day.dateKey)}
+              onClick={() => setSelectedDate(day.dateKey)}
             >
               <span className="calendar-week-pill__day">{day.dayLabel}</span>
               <strong className="calendar-week-pill__date">{day.dayNumber}</strong>
@@ -227,10 +324,10 @@ export const CalendarPage = () => {
         <>
           <Card className="loading-state calendar-loading-card">
             <h2 className="loading-state__title">캘린더를 불러오는 중입니다.</h2>
-            <p className="loading-state__desc">DB에 저장된 오늘 로스트아크 일정을 읽고 있습니다.</p>
+            <p className="loading-state__desc">일주일치 일정을 읽고 있습니다.</p>
             {showSlowLoadingHint ? (
               <p className="calendar-loading-card__hint">
-                서버 응답이 길어지고 있습니다. 잠시만 기다려 주세요.
+                응답이 길어지고 있습니다. 잠시만 기다려 주세요.
               </p>
             ) : null}
           </Card>
@@ -244,7 +341,7 @@ export const CalendarPage = () => {
                       {section.icon}
                     </span>
                     <div>
-                      <p className="calendar-today-section__eyebrow">오늘 일정</p>
+                      <p className="calendar-today-section__eyebrow">선택 날짜 일정</p>
                       <h2>{section.title}</h2>
                     </div>
                   </div>
@@ -279,7 +376,7 @@ export const CalendarPage = () => {
         </>
       ) : errorMessage ? (
         <EmptyState title="캘린더 조회 실패" description={errorMessage} />
-      ) : (
+      ) : hasWeekData ? (
         <section className="calendar-today-grid">
           {sectionData.map((section) => (
             <CalendarTodaySection
@@ -287,13 +384,15 @@ export const CalendarPage = () => {
               title={section.title}
               icon={section.icon}
               tone={section.tone}
+              eyebrow={selectedDate === todayKey ? '오늘 일정' : '선택 날짜 일정'}
               items={section.items}
-              countdownText={getSectionCountdown(section.items, nowTick)}
+              countdownText={section.badgeText}
             />
           ))}
         </section>
+      ) : (
+        <EmptyState title="일정이 없습니다." description="이번 주에 표시할 일정이 없습니다." />
       )}
-
     </div>
   );
 };
