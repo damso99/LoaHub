@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PostService {
+    private static final Logger log = LoggerFactory.getLogger(PostService.class);
     private static final String STATUS_ACTIVE = "ACTIVE";
     private static final String STATUS_DELETED = "DELETED";
 
@@ -49,34 +52,52 @@ public class PostService {
         String normalizedCategory = normalizeCategory(categoryCode);
         String normalizedSort = normalizeSort(sort);
 
-        long total = postMapper.countPosts(board.id(), normalizedCategory);
-        List<PostSummaryResponse> items = postMapper.findPosts(board.id(), normalizedCategory, normalizedSort, offset, normalizedSize)
-            .stream()
-            .map(this::toSummaryResponse)
-            .toList();
+        try {
+            long total = postMapper.countPosts(board.id(), normalizedCategory);
+            List<PostSummaryResponse> items = postMapper.findPosts(board.id(), normalizedCategory, normalizedSort, offset, normalizedSize)
+                .stream()
+                .map(this::toSummaryResponse)
+                .toList();
 
-        long totalPages = total == 0 ? 0 : (long) Math.ceil((double) total / normalizedSize);
-        PageResponse<PostSummaryResponse> payload = new PageResponse<>(
-            items,
-            normalizedPage,
-            normalizedSize,
-            total,
-            totalPages,
-            normalizedPage < totalPages
-        );
+            long totalPages = total == 0 ? 0 : (long) Math.ceil((double) total / normalizedSize);
+            PageResponse<PostSummaryResponse> payload = new PageResponse<>(
+                items,
+                normalizedPage,
+                normalizedSize,
+                total,
+                totalPages,
+                normalizedPage < totalPages
+            );
 
-        return ApiResponse.ok("게시글 목록을 불러왔습니다.", payload);
+            return ApiResponse.ok("게시글 목록을 불러왔습니다.", payload);
+        } catch (DataAccessException exception) {
+            log.warn("게시글 목록 조회에 실패하여 빈 목록을 반환합니다. boardSlug={}, categoryCode={}, sort={}", boardSlug, categoryCode, sort, exception);
+            PageResponse<PostSummaryResponse> payload = new PageResponse<>(
+                List.of(),
+                normalizedPage,
+                normalizedSize,
+                0,
+                0,
+                false
+            );
+            return ApiResponse.ok("게시글 목록을 불러왔습니다.", payload);
+        }
     }
 
     public ApiResponse<List<PostSummaryResponse>> getBestPosts(String boardSlug, String period, String categoryCode) {
         BoardRow board = resolveBoard(boardSlug);
         String normalizedCategory = normalizeCategory(categoryCode);
         OffsetDateTime startAt = resolvePeriodStart(period);
-        List<PostSummaryResponse> items = postMapper.findBestPosts(board.id(), normalizedCategory, startAt, 10)
-            .stream()
-            .map(this::toSummaryResponse)
-            .toList();
-        return ApiResponse.ok("인기글을 불러왔습니다.", items);
+        try {
+            List<PostSummaryResponse> items = postMapper.findBestPosts(board.id(), normalizedCategory, startAt, 10)
+                .stream()
+                .map(this::toSummaryResponse)
+                .toList();
+            return ApiResponse.ok("인기글을 불러왔습니다.", items);
+        } catch (DataAccessException exception) {
+            log.warn("인기글 조회에 실패하여 빈 목록을 반환합니다. boardSlug={}, categoryCode={}, period={}", boardSlug, categoryCode, period, exception);
+            return ApiResponse.ok("인기글을 불러왔습니다.", List.of());
+        }
     }
 
     @Transactional
