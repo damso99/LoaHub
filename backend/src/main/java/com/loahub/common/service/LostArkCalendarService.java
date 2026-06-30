@@ -81,7 +81,6 @@ public class LostArkCalendarService {
         return syncCalendar("MANUAL");
     }
 
-    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void refreshLostArkWeeklyCalendar() {
         try {
             calendarSyncService.syncCurrentCalendar();

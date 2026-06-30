@@ -1,0 +1,32 @@
+name: Calendar Sync
+
+on:
+  schedule:
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: calendar-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Call calendar sync API
+        env:
+          CALENDAR_SYNC_URL: https://loahub-backend.onrender.com/api/internal/calendar/sync
+          SCHEDULER_KEY: ${{ secrets.SCHEDULER_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SCHEDULER_KEY:-}" ]; then
+            echo "SCHEDULER_KEY secret is not configured."
+            exit 1
+          fi
+
+          echo "Calling calendar sync API at ${CALENDAR_SYNC_URL}"
+          response="$(curl -fsS -X POST "${CALENDAR_SYNC_URL}" -H "X-SCHEDULER-KEY: ${SCHEDULER_KEY}")"
+          echo "${response}"
