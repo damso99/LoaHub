@@ -1772,10 +1772,19 @@ select {
   letter-spacing: -0.02em;
 }
 
-.calendar-today-item__time {
-  margin: 0;
-  color: rgba(203, 213, 225, 0.92);
-  line-height: 1.5;
+.calendar-today-item__headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.calendar-today-item__headline h3 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-today-item__reward-text {

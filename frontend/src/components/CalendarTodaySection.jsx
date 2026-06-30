@@ -42,8 +42,10 @@ export const CalendarTodaySection = ({ title, icon, tone, items, countdownText, 
                     <Badge tone={tone}>{item.contentType}</Badge>
                   </div>
 
-                  <h3>{item.contentName}</h3>
-                  <p className="calendar-today-item__time">{item.startTime} 시작</p>
+                  <div className="calendar-today-item__headline">
+                    <h3>{item.contentName}</h3>
+                    {item.occurrenceCount > 1 ? <Badge tone="neutral">x{item.occurrenceCount}</Badge> : null}
+                  </div>
 
                   {rewards.length > 0 ? (
                     <div className="calendar-today-item__rewards" aria-label={`${item.contentName} 보상`}>

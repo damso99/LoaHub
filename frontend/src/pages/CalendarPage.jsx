@@ -180,6 +180,44 @@ const normalizeCalendarItem = (schedule, sectionTitle) => ({
   rewards: Array.isArray(schedule.rewards) ? schedule.rewards : [],
 });
 
+const groupCalendarItemsByName = (items) => {
+  const groups = new Map();
+
+  for (const item of items) {
+    const key = normalizeKey(item.contentName);
+    const current = groups.get(key);
+
+    if (!current) {
+      groups.set(key, {
+        ...item,
+        occurrenceCount: 1,
+        rewards: Array.isArray(item.rewards) ? [...item.rewards] : [],
+      });
+      continue;
+    }
+
+    const mergedRewards = [...(current.rewards ?? []), ...(Array.isArray(item.rewards) ? item.rewards : [])];
+    const rewardMap = new Map();
+    for (const reward of mergedRewards) {
+      const rewardKey = `${reward?.name ?? ''}|${reward?.icon ?? ''}|${reward?.grade ?? ''}`;
+      if (!rewardMap.has(rewardKey)) {
+        rewardMap.set(rewardKey, reward);
+      }
+    }
+
+    groups.set(key, {
+      ...current,
+      rewardType: current.rewardType ?? item.rewardType ?? null,
+      imageUrl: current.imageUrl || item.imageUrl || '',
+      startTime: current.startTime || item.startTime || '',
+      occurrenceCount: current.occurrenceCount + 1,
+      rewards: Array.from(rewardMap.values()),
+    });
+  }
+
+  return Array.from(groups.values());
+};
+
 export const CalendarPage = () => {
   const todayKey = useMemo(() => getKstDateParts().dateKey, []);
   const [calendarWeek, setCalendarWeek] = useState({ weekStartDate: null, weekEndDate: null, items: [] });
@@ -262,9 +300,11 @@ export const CalendarPage = () => {
   const sectionData = useMemo(
     () =>
       SECTION_CONFIG.map((section) => {
-        const items = selectedDayItems
-          .filter((item) => resolveSectionKey(item) === section.key)
-          .map((item) => normalizeCalendarItem(item, section.title));
+        const items = groupCalendarItemsByName(
+          selectedDayItems
+            .filter((item) => resolveSectionKey(item) === section.key)
+            .map((item) => normalizeCalendarItem(item, section.title)),
+        );
 
         return {
           ...section,
