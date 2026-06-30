@@ -113,6 +113,17 @@ const groupBySlot = (items) => {
   }));
 };
 
+const normalizeTodaySectionItems = (items = [], sectionType) =>
+  items.map((item) => ({
+    id: item?.id,
+    contentName: item?.contentName ?? item?.contentsName ?? item?.contents_name ?? '',
+    contentType: sectionType,
+    startTime: item?.startTime ?? item?.start_time ?? item?.startHhmm ?? item?.start_hhmm ?? '',
+    imageUrl: item?.imageUrl ?? item?.image_url ?? item?.contentsIcon ?? item?.contents_icon ?? '',
+    rewardType: item?.rewardType ?? item?.reward_type ?? null,
+    rewards: Array.isArray(item?.rewards) ? item.rewards.map(normalizeReward) : [],
+  }));
+
 const normalizeBackendSchedule = (row) => ({
   id: row?.id,
   weekStartDate: row?.weekStartDate ?? row?.week_start_date ?? null,
@@ -155,7 +166,60 @@ const normalizeBackendWeek = (payload) => {
   };
 };
 
+const fetchBackendToday = async () => {
+  const response = await api.getLostArkCalendarToday();
+  const payload = response?.data?.data ?? response?.data ?? response;
+
+  return {
+    date: payload?.date ?? formatKstDate(),
+    groups: [
+      {
+        slotHhmm: 'adventureIslands',
+        items: normalizeTodaySectionItems(payload?.adventureIslands ?? [], 'adventureIslands'),
+      },
+      {
+        slotHhmm: 'fieldBosses',
+        items: normalizeTodaySectionItems(payload?.fieldBosses ?? [], 'fieldBosses'),
+      },
+      {
+        slotHhmm: 'chaosGates',
+        items: normalizeTodaySectionItems(payload?.chaosGates ?? [], 'chaosGates'),
+      },
+    ],
+  };
+};
+
+const fetchBackendDate = async (date) => {
+  const response = await api.getLostArkCalendarDate(date);
+  const payload = response?.data?.data ?? response?.data ?? response;
+  const groups = Array.isArray(payload?.groups) ? payload.groups : [];
+
+  const items = groups.flatMap((group) =>
+    (Array.isArray(group?.items) ? group.items : []).map((item) => ({
+      ...normalizeBackendSchedule(item),
+      startDate: payload?.date ?? date,
+      slotHhmm: group?.slotHhmm ?? item?.slotHhmm ?? item?.slot_hhmm ?? null,
+    })),
+  );
+
+  return {
+    date: payload?.date ?? date,
+    groups: groupBySlot(items),
+  };
+};
+
 export const getLostArkCalendarToday = async () => {
+  try {
+    return await fetchBackendToday();
+  } catch {
+    if (!hasSupabaseEnv) {
+      return {
+        date: formatKstDate(),
+        groups: groupBySlot([]),
+      };
+    }
+  }
+
   const date = formatKstDate();
   const params = new URLSearchParams({
     select: selectFields,
@@ -208,6 +272,17 @@ export const getLostArkCalendarDate = async (date) => {
   const normalizedDate = String(date ?? '').trim();
   if (!normalizedDate) {
     throw new Error('조회할 날짜가 필요합니다.');
+  }
+
+  try {
+    return await fetchBackendDate(normalizedDate);
+  } catch {
+    if (!hasSupabaseEnv) {
+      return {
+        date: normalizedDate,
+        groups: groupBySlot([]),
+      };
+    }
   }
 
   const params = new URLSearchParams({
