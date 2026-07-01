@@ -39,6 +39,7 @@ export const ForumBoardPage = ({ defaultBoardSlug = 'free', boardType = 'FREE', 
   const currentSort = searchParams.get('sort') ?? 'latest';
   const currentPage = Number(searchParams.get('page') ?? 1);
   const currentPeriod = searchParams.get('period') ?? 'daily';
+  const currentKeyword = searchParams.get('keyword') ?? '';
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +111,7 @@ export const ForumBoardPage = ({ defaultBoardSlug = 'free', boardType = 'FREE', 
             boardSlug: selectedBoard.slug,
             period: currentPeriod,
             category: currentCategory || undefined,
+            keyword: currentKeyword.trim() || undefined,
           });
           if (cancelled) {
             return;
@@ -134,6 +136,7 @@ export const ForumBoardPage = ({ defaultBoardSlug = 'free', boardType = 'FREE', 
           size: 20,
           category: currentCategory || undefined,
           sort: currentSort,
+          keyword: currentKeyword.trim() || undefined,
         });
         if (cancelled) {
           return;
@@ -164,25 +167,23 @@ export const ForumBoardPage = ({ defaultBoardSlug = 'free', boardType = 'FREE', 
     return () => {
       cancelled = true;
     };
-  }, [currentCategory, currentPage, currentPeriod, currentSort, isBestPage, selectedBoard]);
+  }, [currentCategory, currentKeyword, currentPage, currentPeriod, currentSort, isBestPage, selectedBoard]);
 
   const categoryOptions = selectedBoard?.categories ?? [];
 
   const updateSearchParams = (updates) => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value == null || value === '') {
-          next.delete(key);
-        } else {
-          next.set(key, String(value));
-        }
-      });
-      if (updates.page == null) {
-        next.delete('page');
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value == null || value === '') {
+        next.delete(key);
+      } else {
+        next.set(key, String(value));
       }
-      return next;
     });
+    if (updates.page == null) {
+      next.delete('page');
+    }
+    setSearchParams(next);
   };
 
   const goToWrite = () => {

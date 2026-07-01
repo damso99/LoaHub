@@ -66,6 +66,17 @@
       <if test="categoryCode != null and categoryCode != ''">
         AND p.category_code = #{categoryCode}
       </if>
+      <if test="keyword != null and keyword != ''">
+        AND (
+          LOWER(COALESCE(p.title, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(p.content, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(p.author, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(c.name, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(b.board_name, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(b.class_code, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(b.class_name, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+        )
+      </if>
     ORDER BY
       p.pinned DESC,
       <choose>
@@ -88,10 +99,23 @@
   <select id="countPosts" resultType="long">
     SELECT COUNT(*)
     FROM posts p
+    INNER JOIN boards b ON b.id = p.board_id
+    INNER JOIN board_categories c ON c.board_type = b.board_type AND c.code = p.category_code
     WHERE p.board_id = #{boardId}
       AND p.status = 'ACTIVE'
       <if test="categoryCode != null and categoryCode != ''">
         AND p.category_code = #{categoryCode}
+      </if>
+      <if test="keyword != null and keyword != ''">
+        AND (
+          LOWER(COALESCE(p.title, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(p.content, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(p.author, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(c.name, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(b.board_name, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(b.class_code, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+          OR LOWER(COALESCE(b.class_name, '')) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+        )
       </if>
   </select>
 

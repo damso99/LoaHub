@@ -11,14 +11,13 @@ import { BoardPagination } from './board/BoardPagination';
 import { BoardPostCard } from './board/BoardPostCard';
 import { BoardSidebar } from './board/BoardSidebar';
 import {
-  buildMockPosts,
   formatDate,
   getBoardDescription,
   getBoardPathBySlug,
   getBoardTitle,
   getCategoryLabel,
-  mockBoards,
   normalizeBoardPayload,
+  resolveBoardList,
 } from './board/boardUtils';
 
 const normalizePost = (post, currentUserId) => {
@@ -41,16 +40,17 @@ const normalizePost = (post, currentUserId) => {
   };
 };
 
-const getCategoryKey = (post) => {
-  if (post.isNotice) return 'notice';
-  if (post.isHot) return 'hot';
+const parsePage = (value) => {
+  const next = Number(value ?? 1);
+  return Number.isFinite(next) && next > 0 ? next : 1;
+};
 
-  const code = String(post.categoryCode ?? '').toLowerCase();
-  if (code.includes('question')) return 'question';
-  if (code.includes('info')) return 'info';
-  if (code.includes('guide') || code.includes('skill') || code.includes('setting')) return 'guide';
-  if (code.includes('chat') || code.includes('talk')) return 'chat';
-  return 'all';
+const normalizeItems = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  return Array.isArray(payload?.items) ? payload.items : [];
 };
 
 export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoardSlug = 'free' }) => {
@@ -59,7 +59,7 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
   const resolvedClassCode = classCode ?? routeParams.classCode ?? null;
   const { user, requireLogin } = useAuthGuard();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [boards, setBoards] = useState(mockBoards);
+  const [boards, setBoards] = useState([]);
   const [pageState, setPageState] = useState({
     items: [],
     page: 1,
@@ -68,62 +68,60 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
     totalPages: 0,
     hasNext: false,
   });
-  const [loading, setLoading] = useState(true);
+  const [loadingBoards, setLoadingBoards] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [error, setError] = useState('');
   const [searchValue, setSearchValue] = useState(searchParams.get('keyword') ?? '');
-  const [usingFallback, setUsingFallback] = useState(false);
 
   const categoryValue = searchParams.get('category') ?? 'all';
   const sortValue = searchParams.get('sort') ?? 'latest';
-  const pageValue = Number(searchParams.get('page') ?? 1);
+  const pageValue = parsePage(searchParams.get('page'));
 
   const selectedBoard = useMemo(() => {
     if (!boards.length) {
-      return mockBoards[0];
+      return null;
     }
 
-    if (boardType === 'FREE') {
-      return boards.find((board) => board.slug === defaultBoardSlug) ?? boards.find((board) => board.boardType === 'FREE') ?? boards[0];
+    if (boardType === 'CLASS') {
+      if (resolvedClassCode) {
+        return (
+          boards.find((board) => board.slug === `class/${resolvedClassCode}`) ??
+          boards.find((board) => board.boardType === 'CLASS') ??
+          boards[0]
+        );
+      }
+
+      return boards.find((board) => board.boardType === 'CLASS') ?? boards[0];
     }
 
-    if (resolvedClassCode) {
-      return boards.find((board) => board.slug === `class/${resolvedClassCode}`) ?? boards.find((board) => board.boardType === 'CLASS') ?? boards[0];
-    }
-
-    return boards.find((board) => board.boardType === 'CLASS') ?? boards[0];
-  }, [boards, boardType, defaultBoardSlug, resolvedClassCode]);
+    return boards.find((board) => board.slug === defaultBoardSlug) ?? boards.find((board) => board.boardType === 'FREE') ?? boards[0];
+  }, [boardType, boards, defaultBoardSlug, resolvedClassCode]);
 
   const pageTitle = selectedBoard?.boardName ?? getBoardTitle(boardType);
-  const pageDescription =
-    selectedBoard?.boardType === 'CLASS'
-      ? `${selectedBoard.className ?? '직업'} 게시판의 공략, 세팅, 질문을 확인할 수 있습니다.`
-      : getBoardDescription(boardType);
+  const pageDescription = selectedBoard?.description ?? getBoardDescription(boardType);
+  const boardOptions = useMemo(() => boards.filter((board) => board.boardType === 'CLASS'), [boards]);
 
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
       try {
-        setLoading(true);
+        setLoadingBoards(true);
         const response = await api.getBoards();
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const payload = normalizeBoardPayload(response);
-        const nextBoards = Array.isArray(payload) ? payload : payload?.data ?? [];
-        setBoards(nextBoards.length ? nextBoards : mockBoards);
-        setUsingFallback(!nextBoards.length);
+        const nextBoards = resolveBoardList(payload);
+        setBoards(nextBoards);
         setError('');
       } catch (exception) {
         if (!cancelled) {
-          setBoards(mockBoards);
-          setUsingFallback(true);
-          setError('');
+          setBoards([]);
+          setError(exception?.message ?? '게시판 정보를 불러오지 못했습니다.');
         }
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setLoadingBoards(false);
         }
       }
     };
@@ -148,22 +146,20 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
 
     const run = async () => {
       try {
-        setLoading(true);
-
+        setLoadingPosts(true);
         const response = await api.getPosts({
           boardSlug: selectedBoard.slug,
           page: pageValue,
           size: 20,
           category: categoryValue === 'all' ? undefined : categoryValue.toUpperCase(),
           sort: sortValue,
+          keyword: searchValue.trim() || undefined,
         });
 
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const payload = normalizeBoardPayload(response);
-        const items = Array.isArray(payload?.items) ? payload.items : [];
+        const items = normalizeItems(payload);
         setPageState({
           items: items.map((post) => normalizePost(post, user?.id)),
           page: payload?.page ?? pageValue,
@@ -172,25 +168,22 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
           totalPages: payload?.totalPages ?? Math.max(1, Math.ceil((payload?.total ?? items.length) / 20)),
           hasNext: payload?.hasNext ?? false,
         });
-        setUsingFallback(false);
         setError('');
       } catch (exception) {
         if (!cancelled) {
-          const mockItems = buildMockPosts(selectedBoard.slug).map((post) => normalizePost(post, user?.id));
           setPageState({
-            items: mockItems,
-            page: 1,
-            size: mockItems.length,
-            total: mockItems.length,
-            totalPages: mockItems.length > 0 ? 1 : 0,
+            items: [],
+            page: pageValue,
+            size: 20,
+            total: 0,
+            totalPages: 0,
             hasNext: false,
           });
-          setUsingFallback(true);
-          setError('실제 게시글을 불러오지 못해 샘플 데이터로 표시 중입니다.');
+          setError(exception?.message ?? '게시글 목록을 불러오지 못했습니다.');
         }
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setLoadingPosts(false);
         }
       }
     };
@@ -200,111 +193,70 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
     return () => {
       cancelled = true;
     };
-  }, [categoryValue, pageValue, selectedBoard, sortValue, user?.id]);
+  }, [boardType, categoryValue, pageValue, searchValue, selectedBoard, sortValue, user?.id]);
 
-  const boardOptions = useMemo(() => boards.filter((board) => board.boardType === 'CLASS'), [boards]);
-
-  const visiblePosts = useMemo(() => {
-    const keyword = searchValue.trim().toLowerCase();
-    return pageState.items.filter((post) => {
-      const categoryKey = getCategoryKey(post);
-      const matchedCategory =
-        categoryValue === 'all' ||
-        (categoryValue === 'notice' && post.isNotice) ||
-        (categoryValue === 'hot' && post.isHot) ||
-        categoryKey === categoryValue;
-
-      const matchedKeyword =
-        !keyword ||
-        [post.title, post.writer, post.categoryName, post.content]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(keyword));
-
-      return matchedCategory && matchedKeyword;
-    });
-  }, [categoryValue, pageState.items, searchValue]);
-
-  const pinnedPosts = useMemo(() => visiblePosts.filter((post) => post.isNotice), [visiblePosts]);
-  const normalPosts = useMemo(() => visiblePosts.filter((post) => !post.isNotice), [visiblePosts]);
+  const pinnedPosts = useMemo(() => pageState.items.filter((post) => post.isNotice), [pageState.items]);
+  const normalPosts = useMemo(() => pageState.items.filter((post) => !post.isNotice), [pageState.items]);
   const hotPosts = useMemo(
-    () => [...visiblePosts].sort((left, right) => Number(right.likeCount ?? 0) - Number(left.likeCount ?? 0)).slice(0, 3),
-    [visiblePosts],
-  );
-  const recentComments = useMemo(
-    () =>
-      [...visiblePosts]
-        .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
-        .slice(0, 3)
-        .map((post, index) => ({
-          id: `${post.id}-${index}`,
-          author: post.writer,
-          content: `${post.title.slice(0, 24)}${post.title.length > 24 ? '…' : ''}`,
-          createdAt: post.createdAt,
-        })),
-    [visiblePosts],
+    () => [...pageState.items].sort((left, right) => Number(right.likeCount ?? 0) - Number(left.likeCount ?? 0)).slice(0, 3),
+    [pageState.items],
   );
 
-  const onlineMembers = useMemo(
-    () => [
-      { name: 'Guardian', role: '대전 중' },
-      { name: 'Moko', role: '파티 모집 중' },
-      { name: 'Rainfall', role: '채팅 중' },
-      { name: 'BlueShield', role: '레이드 준비 중' },
-    ],
-    [],
-  );
-
-  const activeBoards = boardType === 'CLASS' ? boardOptions : [];
+  const updateSearchParams = (updater) => {
+    const next = new URLSearchParams(searchParams);
+    updater(next);
+    setSearchParams(next);
+  };
 
   const handleBoardChange = (nextSlug) => {
     navigate(getBoardPathBySlug(nextSlug));
   };
 
-  const handleWrite = () => {
-    if (!requireLogin() || !selectedBoard) {
-      return;
-    }
-
-    navigate(`/boards/write?board=${encodeURIComponent(selectedBoard.slug)}`);
+  const handleSearchChange = (value) => {
+    setSearchValue(value);
+    updateSearchParams((next) => {
+      if (value.trim()) {
+        next.set('keyword', value.trim());
+      } else {
+        next.delete('keyword');
+      }
+      next.delete('page');
+    });
   };
 
   const handleCategoryChange = (value) => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
+    updateSearchParams((next) => {
       if (value === 'all') {
         next.delete('category');
       } else {
         next.set('category', value);
       }
       next.delete('page');
-      return next;
     });
   };
 
   const handleSortChange = (value) => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
+    updateSearchParams((next) => {
       next.set('sort', value);
       next.delete('page');
-      return next;
     });
   };
 
   const handlePageChange = (value) => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
+    updateSearchParams((next) => {
       next.set('page', String(value));
-      return next;
     });
   };
 
-  if (loading && !pageState.items.length) {
+  const isInitialLoading = (loadingBoards || loadingPosts) && !pageState.items.length && !error;
+
+  if (isInitialLoading) {
     return (
       <div className="page-stack board-page board-shell">
         <BoardHeader title={pageTitle} description="게시판 정보를 불러오는 중입니다." />
         <Card className="board-empty-card">
-          <h2>게시판을 준비하는 중입니다.</h2>
-          <p>잠시만 기다리면 목록 화면이 표시됩니다.</p>
+          <h2>게시판을 불러오는 중입니다.</h2>
+          <p>잠시 후 목록이 표시됩니다.</p>
         </Card>
       </div>
     );
@@ -315,42 +267,46 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
       <BoardHeader
         title={pageTitle}
         description={pageDescription}
-        meta={`마지막 갱신: ${formatDate(new Date().toISOString())}${usingFallback ? ' · 샘플 데이터 표시 중' : ''}`}
+        meta={`마지막 갱신: ${formatDate(new Date().toISOString())}`}
         action={
-          <Button onClick={handleWrite} className="board-write-button">
+          <Button onClick={() => {
+            if (!requireLogin() || !selectedBoard) {
+              return;
+            }
+
+            navigate(`/boards/write?board=${encodeURIComponent(selectedBoard.slug)}`);
+          }} className="board-write-button">
             글쓰기
           </Button>
         }
       />
 
-      {boardType === 'CLASS' ? (
+      {boardType === 'CLASS' && boardOptions.length ? (
         <div className="board-class-strip" role="tablist" aria-label="직업게시판 선택">
-          {boards
-            .filter((board) => board.boardType === 'CLASS')
-            .map((board) => (
-              <Button
-                key={board.slug}
-                variant={board.slug === selectedBoard?.slug ? 'primary' : 'outline'}
-                className="board-class-strip__button"
-                onClick={() => handleBoardChange(board.slug)}
-              >
-                {board.className ?? board.boardName}
-              </Button>
-            ))}
+          {boardOptions.map((board) => (
+            <Button
+              key={board.slug}
+              variant={board.slug === selectedBoard?.slug ? 'primary' : 'outline'}
+              className="board-class-strip__button"
+              onClick={() => handleBoardChange(board.slug)}
+            >
+              {board.className ?? board.boardName}
+            </Button>
+          ))}
         </div>
       ) : null}
 
       <BoardFilterBar
         searchValue={searchValue}
-        onSearchChange={setSearchValue}
+        onSearchChange={handleSearchChange}
         categoryValue={categoryValue}
         onCategoryChange={handleCategoryChange}
         sortValue={sortValue}
         onSortChange={handleSortChange}
         boardValue={selectedBoard?.slug ?? defaultBoardSlug}
         onBoardChange={handleBoardChange}
-        boardOptions={activeBoards}
-        showBoardPicker={boardType === 'CLASS' && activeBoards.length > 0}
+        boardOptions={boardOptions}
+        showBoardPicker={boardType === 'CLASS' && boardOptions.length > 0}
       />
 
       {error ? <Card className="board-error-card">{error}</Card> : null}
@@ -361,9 +317,9 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
             <div className="post-list-card__header">
               <div>
                 <p className="board-eyebrow">BOARD</p>
-                <h2>게시물 목록</h2>
+                <h2>게시글 목록</h2>
               </div>
-              <span className="post-list-card__count">{visiblePosts.length}개</span>
+              <span className="post-list-card__count">{pageState.total.toLocaleString()}개</span>
             </div>
 
             <div className="post-list-stack">
@@ -375,10 +331,10 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
               ))}
             </div>
 
-            {!visiblePosts.length ? (
+            {!pageState.items.length ? (
               <EmptyState
-                title="게시물이 없습니다."
-                description="검색어와 필터를 바꾸면 더 많은 게시물을 확인할 수 있습니다."
+                title="게시글이 없습니다."
+                description="검색어 또는 필터를 바꿔 다시 확인해 주세요."
               />
             ) : null}
           </Card>
@@ -386,7 +342,7 @@ export const BoardListPage = ({ boardType = 'FREE', classCode = null, defaultBoa
           <BoardPagination page={pageState.page} totalPages={pageState.totalPages} onPageChange={handlePageChange} />
         </section>
 
-        <BoardSidebar hotPosts={hotPosts} recentComments={recentComments} onlineMembers={onlineMembers} />
+        <BoardSidebar hotPosts={hotPosts} recentComments={[]} onlineMembers={[]} />
       </div>
     </div>
   );

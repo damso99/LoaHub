@@ -31,9 +31,10 @@ public class PostController {
         @RequestParam(defaultValue = "1") long page,
         @RequestParam(defaultValue = "20") long size,
         @RequestParam(required = false) String category,
-        @RequestParam(defaultValue = "latest") String sort
+        @RequestParam(defaultValue = "latest") String sort,
+        @RequestParam(required = false) String keyword
     ) {
-        return ResponseEntity.ok(postService.getPosts(boardSlug, page, size, category, sort));
+        return ResponseEntity.ok(postService.getPosts(boardSlug, page, size, category, sort, keyword));
     }
 
     @GetMapping("/best")

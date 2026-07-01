@@ -7,11 +7,15 @@ const navItems = [
   { to: '/character-search', label: '캐릭터 검색', icon: 'swords' },
   { to: '/boards/free', label: '게시판', icon: 'dashboard' },
   { to: '/calendar', label: '캘린더', icon: 'calendar_today' },
-  { to: '/messages', label: '쪽지함', icon: 'mail' },
+  { to: '/messages', label: '쪽지', icon: 'mail' },
 ];
 
 export const Sidebar = () => {
   const { profile, isAdmin, isAuthenticated, messageUnreadCount } = useAppState();
+  const profileImage = profile?.characterImage || 'https://placehold.co/120x120/162033/7cb8ff?text=LoaHub';
+  const mainCharacterName = profile?.mainCharacterName || '대표 캐릭터 미설정';
+  const characterClass = profile?.characterClass || '직업 미설정';
+  const itemLevel = profile?.itemLevel || '-';
 
   return (
     <aside className="sidebar">
@@ -19,19 +23,19 @@ export const Sidebar = () => {
         {isAuthenticated ? (
           <>
             <div className="profile-card__avatar">
-              <img src={profile.characterImage} alt={profile.mainCharacterName} />
+              <img src={profileImage} alt={mainCharacterName} />
               <span className="profile-card__status" />
             </div>
             <div className="profile-card__content">
-              <strong>{profile.mainCharacterName}</strong>
-              <p>{profile.characterClass}</p>
-              <p>아이템레벨 {profile.itemLevel}</p>
+              <strong>{mainCharacterName}</strong>
+              <p>{characterClass}</p>
+              <p>아이템레벨 {itemLevel}</p>
             </div>
           </>
         ) : (
           <div className="profile-card__content">
-            <strong>로그인이 필요합니다.</strong>
-            <p>로그인 후 캐릭터와 쪽지 기능을 이용할 수 있습니다.</p>
+            <strong>로그인이 필요합니다</strong>
+            <p>로그인 후 캐릭터와 쪽지 기능을 사용할 수 있습니다.</p>
           </div>
         )}
       </Card>

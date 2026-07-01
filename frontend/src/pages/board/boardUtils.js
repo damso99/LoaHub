@@ -262,8 +262,5 @@ export const buildMockPosts = (boardSlug) =>
 
 export const resolveBoardList = (response) => {
   const payload = normalizeBoardPayload(response);
-  const items = Array.isArray(payload) ? payload : payload?.data ?? [];
-
-  return items.length ? items : mockBoards;
+  return Array.isArray(payload) ? payload : payload?.data ?? [];
 };
-

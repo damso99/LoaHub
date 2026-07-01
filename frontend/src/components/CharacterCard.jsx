@@ -2,7 +2,7 @@ import { Badge } from './Badge';
 import { Button } from './Button';
 import { Card } from './Card';
 
-export const CharacterCard = ({ character, onSetMain, onTrack }) => {
+export const CharacterCard = ({ character, onSetMain }) => {
   return (
     <Card className="character-card">
       <div className="character-card__header">
@@ -30,14 +30,10 @@ export const CharacterCard = ({ character, onSetMain, onTrack }) => {
       </div>
 
       <div className="character-card__actions">
-        <Button variant={character.isMain ? 'ghost' : 'secondary'} onClick={() => onSetMain(character)}>
+        <Button variant={character.isMain ? 'ghost' : 'secondary'} onClick={() => onSetMain?.(character)}>
           {character.isMain ? '대표 캐릭터' : '대표 캐릭터로 설정'}
-        </Button>
-        <Button variant="outline" onClick={() => onTrack(character)}>
-          트래킹 추가
         </Button>
       </div>
     </Card>
   );
 };
-

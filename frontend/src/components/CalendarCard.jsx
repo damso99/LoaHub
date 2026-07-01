@@ -9,7 +9,7 @@ export const CalendarCard = ({ content, onToggle, enabled }) => {
           <h3>{content.contentName}</h3>
         </div>
         <button type="button" className={`toggle-pill ${enabled ? 'on' : ''}`} onClick={onToggle}>
-          {enabled ? 'ON' : 'OFF'}
+          {enabled ? '활성' : '비활성'}
         </button>
       </div>
       <p className="calendar-card__time">{content.startTime}</p>
@@ -17,4 +17,3 @@ export const CalendarCard = ({ content, onToggle, enabled }) => {
     </Card>
   );
 };
-

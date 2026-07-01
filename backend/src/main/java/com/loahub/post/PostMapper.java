@@ -15,12 +15,14 @@ public interface PostMapper {
         @Param("categoryCode") String categoryCode,
         @Param("sort") String sort,
         @Param("offset") long offset,
-        @Param("size") long size
+        @Param("size") long size,
+        @Param("keyword") String keyword
     );
 
     long countPosts(
         @Param("boardId") long boardId,
-        @Param("categoryCode") String categoryCode
+        @Param("categoryCode") String categoryCode,
+        @Param("keyword") String keyword
     );
 
     Optional<PostRow> findPostById(@Param("postId") long postId);

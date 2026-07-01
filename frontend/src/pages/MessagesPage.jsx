@@ -11,7 +11,7 @@ import { useAppState } from '../context/AppStateContext';
 const extractData = (response) => response?.data?.data ?? response?.data ?? [];
 
 export const MessagesPage = () => {
-  const { user, messageUnreadCount, setMessageUnreadCount } = useAppState();
+  const { user, messageUnreadCount, setMessageUnreadCount, messageRefreshVersion, setActiveMessageThreadId } = useAppState();
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [receiverId, setReceiverId] = useState('');
@@ -36,7 +36,8 @@ export const MessagesPage = () => {
 
   useEffect(() => {
     void loadThreads();
-  }, []);
+    setActiveMessageThreadId(null);
+  }, [messageRefreshVersion, setActiveMessageThreadId]);
 
   const handleSend = async (event) => {
     event.preventDefault();

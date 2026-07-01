@@ -45,7 +45,7 @@ export const AppRoutes = () => {
           <Route path="/write" element={<PostWritePage />} />
           <Route path="/posts/write" element={<PostWritePage />} />
           <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/:messageId" element={<MessageDetailPage />} />
+        <Route path="/messages/:threadId" element={<MessageDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />
         </Route>
