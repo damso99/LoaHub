@@ -17,11 +17,37 @@ export const HomePage = () => {
       setLoadingPosts(true);
 
       try {
-        const response = await api.getBestPosts({ boardSlug: 'free', period: 'daily' });
+        const [bestResponse, latestResponse] = await Promise.allSettled([
+          api.getBestPosts({ boardSlug: 'free', period: 'daily' }),
+          api.getPosts({ boardSlug: 'free', page: 1, size: 5, sort: 'latest' }),
+        ]);
+
         if (cancelled) return;
 
-        const payload = response?.data?.data ?? response?.data ?? [];
-        setPopularPosts(Array.isArray(payload) ? payload : payload?.items ?? []);
+        const bestPayload =
+          bestResponse.status === 'fulfilled'
+            ? bestResponse.value?.data?.data ?? bestResponse.value?.data ?? []
+            : [];
+        const latestPayload =
+          latestResponse.status === 'fulfilled'
+            ? latestResponse.value?.data?.data ?? latestResponse.value?.data ?? []
+            : [];
+
+        const bestPosts = Array.isArray(bestPayload) ? bestPayload : bestPayload?.items ?? [];
+        const latestPosts = Array.isArray(latestPayload) ? latestPayload : latestPayload?.items ?? [];
+        const mergedPosts = [...bestPosts];
+
+        latestPosts.forEach((post) => {
+          if (mergedPosts.length >= 2) {
+            return;
+          }
+
+          if (!mergedPosts.some((item) => String(item.id) === String(post.id))) {
+            mergedPosts.push(post);
+          }
+        });
+
+        setPopularPosts(mergedPosts.slice(0, 2));
       } catch {
         if (!cancelled) {
           setPopularPosts([]);
