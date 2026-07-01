@@ -1,11 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { PageHeader } from '../components/PageHeader';
 import { TodayScheduleSection } from '../components/TodayScheduleSection';
-import { useEffect, useState } from 'react';
 
 export const HomePage = () => {
   const [popularPosts, setPopularPosts] = useState([]);
@@ -16,6 +15,7 @@ export const HomePage = () => {
 
     const loadPopularPosts = async () => {
       setLoadingPosts(true);
+
       try {
         const response = await api.getBestPosts({ boardSlug: 'free', period: 'daily' });
         if (cancelled) return;
@@ -44,15 +44,16 @@ export const HomePage = () => {
     <div className="page-stack home-page">
       <TodayScheduleSection />
 
-      <PageHeader
-        title="인기 게시물"
-        description="지금 가장 반응이 많은 게시물을 확인하세요."
-        action={
-          <Button as={Link} to="/boards/free" variant="ghost">
-            게시판으로 이동
-          </Button>
-        }
-      />
+      <section className="section-header section-header--compact">
+        <div>
+          <p className="section-eyebrow">POPULAR</p>
+          <h2>인기 게시물</h2>
+          <p>지금 가장 반응이 많은 게시글을 확인하세요.</p>
+        </div>
+        <Button as={Link} to="/boards/free" variant="ghost">
+          게시판으로 이동
+        </Button>
+      </section>
 
       {loadingPosts ? (
         <Card className="section-card">
@@ -69,7 +70,7 @@ export const HomePage = () => {
                     {post.pinned ? <Badge tone="primary">공지</Badge> : <Badge tone="neutral">인기</Badge>}
                     {post.categoryName ? <Badge tone="info">{post.categoryName}</Badge> : null}
                   </div>
-                  <span className="popular-post-card__count">좋아요 {Number(post.likeCount ?? 0)}</span>
+                  <span className="popular-post-card__count">추천 {Number(post.likeCount ?? 0)}</span>
                 </div>
                 <h3>{post.title}</h3>
                 <p>{post.content}</p>
@@ -82,21 +83,6 @@ export const HomePage = () => {
           ))}
         </section>
       )}
-
-      <Card className="section-card home-footer-card">
-        <div>
-          <h2>LoaHub 둘러보기</h2>
-          <p>게시판과 캘린더, 쪽지까지 이어지는 게임 커뮤니티의 기본 흐름을 한곳에 모았습니다.</p>
-        </div>
-        <div className="hero-actions">
-          <Button as={Link} to="/boards/free">
-            게시판 보기
-          </Button>
-          <Button as={Link} to="/messages" variant="secondary">
-            쪽지 확인
-          </Button>
-        </div>
-      </Card>
     </div>
   );
 };
