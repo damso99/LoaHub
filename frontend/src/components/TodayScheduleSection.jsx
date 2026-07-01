@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchLostArkCalendar, getLostArkCalendarKey } from '../api/lostarkCalendarApi';
-import { resolveLoaScheduleDate, isScheduleDateMatch } from '../utils/calendarDate';
+import { getLostArkCalendarToday } from '../api/lostarkCalendarApi';
 import { Button } from './Button';
 import { ScheduleSkeletonCard } from './ScheduleSkeletonCard';
 import { TodayScheduleCard } from './TodayScheduleCard';
@@ -10,132 +9,62 @@ const SCHEDULE_CONFIG = [
   {
     key: 'adventureIslands',
     title: '모험섬',
-    matchers: ['모험섬', '모험 섬', 'adventureisland'],
     emptyDescription: '오늘 예정된 모험섬 일정이 없습니다.',
   },
   {
     key: 'chaosGates',
     title: '카오스게이트',
-    matchers: ['카오스게이트', '카오스 게이트', 'chaosgate'],
     emptyDescription: '오늘 예정된 카오스게이트 일정이 없습니다.',
   },
   {
     key: 'fieldBosses',
     title: '필드보스',
-    matchers: ['필드보스', '필드 보스', 'fieldboss'],
     emptyDescription: '오늘 예정된 필드보스 일정이 없습니다.',
   },
 ];
 
-const normalizeKey = (value) => getLostArkCalendarKey(value);
-
-const resolveScheduleKey = (item) => {
-  const candidates = [
-    item.categoryName,
-    item.contentsName,
-    item.rawContent?.CategoryName,
-    item.rawContent?.ContentsName,
-    item.rawContent?.contentsName,
-  ].map(normalizeKey);
-
-  if (
-    candidates.some((value) =>
-      SCHEDULE_CONFIG[0].matchers.some((matcher) => value.includes(normalizeKey(matcher))),
-    )
-  ) {
-    return 'adventureIslands';
-  }
-
-  if (
-    candidates.some((value) =>
-      SCHEDULE_CONFIG[1].matchers.some((matcher) => value.includes(normalizeKey(matcher))),
-    )
-  ) {
-    return 'chaosGates';
-  }
-
-  if (
-    candidates.some((value) =>
-      SCHEDULE_CONFIG[2].matchers.some((matcher) => value.includes(normalizeKey(matcher))),
-    )
-  ) {
-    return 'fieldBosses';
-  }
-
-  return null;
-};
-
-const buildEntriesByCategory = (items, targetDate) => {
-  const grouped = new Map(SCHEDULE_CONFIG.map((config) => [config.key, []]));
-
-  for (const item of items) {
-    const scheduleKey = resolveScheduleKey(item);
-    if (!scheduleKey) {
-      continue;
-    }
-
-    const startTimes = Array.isArray(item.startTimes) ? item.startTimes : [];
-    for (const startTime of startTimes) {
-      if (!isScheduleDateMatch(startTime, targetDate)) {
-        continue;
-      }
-
-      const normalizedTime = String(startTime).trim();
-      const entries = grouped.get(scheduleKey) ?? [];
-      const dedupeKey = `${String(item.contentsName ?? '').trim()}|${normalizedTime}`;
-      if (entries.some((entry) => entry.dedupeKey === dedupeKey)) {
-        continue;
-      }
-
-      entries.push({
-        dedupeKey,
-        categoryName: item.categoryName,
-        contentsName: item.contentsName,
-        contentsIcon: item.contentsIcon,
-        minItemLevel: item.minItemLevel,
-        location: item.location,
-        startTime: normalizedTime,
-        rewards: Array.isArray(item.rewardItems) ? item.rewardItems : [],
-      });
-      grouped.set(scheduleKey, entries);
-    }
-  }
-
-  return grouped;
-};
-
-const sortEntries = (entries) =>
-  [...entries].sort((left, right) => String(left.startTime).localeCompare(String(right.startTime)));
-
 export const TodayScheduleSection = () => {
-  const [items, setItems] = useState([]);
+  const [schedule, setSchedule] = useState({
+    date: '',
+    adventureIslands: [],
+    chaosGates: [],
+    fieldBosses: [],
+  });
   const [status, setStatus] = useState('loading');
   const [errorType, setErrorType] = useState('');
   const [retryIndex, setRetryIndex] = useState(0);
-  const targetDate = resolveLoaScheduleDate();
 
   useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
+    let cancelled = false;
 
     const loadSchedule = async () => {
       setStatus('loading');
       setErrorType('');
 
       try {
-        const response = await fetchLostArkCalendar({ signal: controller.signal });
-        if (!active) {
+        const response = await getLostArkCalendarToday();
+        if (cancelled) {
           return;
         }
 
-        setItems(Array.isArray(response) ? response : []);
+        setSchedule({
+          date: response.date ?? '',
+          adventureIslands: response.adventureIslands ?? [],
+          chaosGates: response.chaosGates ?? [],
+          fieldBosses: response.fieldBosses ?? [],
+        });
         setStatus('ready');
       } catch (error) {
-        if (!active) {
+        if (cancelled) {
           return;
         }
 
-        setItems([]);
+        setSchedule({
+          date: '',
+          adventureIslands: [],
+          chaosGates: [],
+          fieldBosses: [],
+        });
         setStatus('error');
         setErrorType(error?.code === 'MISSING_LOSTARK_API_KEY' ? 'missing-api-key' : 'request-failed');
       }
@@ -144,22 +73,18 @@ export const TodayScheduleSection = () => {
     void loadSchedule();
 
     return () => {
-      active = false;
-      controller.abort();
+      cancelled = true;
     };
   }, [retryIndex]);
 
-  const sections = useMemo(() => {
-    const grouped = buildEntriesByCategory(items, targetDate);
-
-    return SCHEDULE_CONFIG.map((config) => ({
-      ...config,
-      entries: sortEntries(grouped.get(config.key) ?? []),
-    }));
-  }, [items, targetDate]);
-
-  const hasError = status === 'error';
-  const isLoading = status === 'loading';
+  const sections = useMemo(
+    () =>
+      SCHEDULE_CONFIG.map((config) => ({
+        ...config,
+        items: schedule[config.key] ?? [],
+      })),
+    [schedule],
+  );
 
   return (
     <section className="today-schedule-section">
@@ -168,7 +93,7 @@ export const TodayScheduleSection = () => {
           <p className="eyebrow">오늘의 일정</p>
           <h2 className="today-schedule-section__title">오늘 진행되는 모험섬, 카오스게이트, 필드보스 일정을 확인하세요.</h2>
           <p className="today-schedule-section__desc">
-            한국시간 기준 오전 6시를 기준으로 오늘 일정을 계산해 표시합니다.
+            백엔드 DB를 기준으로 오늘 일정을 불러옵니다.
           </p>
         </div>
         <Button as={Link} to="/calendar" variant="secondary">
@@ -176,13 +101,13 @@ export const TodayScheduleSection = () => {
         </Button>
       </div>
 
-      {isLoading ? (
+      {status === 'loading' ? (
         <div className="today-schedule-grid" aria-label="오늘의 일정 로딩 상태">
           {SCHEDULE_CONFIG.map((config) => (
             <ScheduleSkeletonCard key={config.key} title={config.title} />
           ))}
         </div>
-      ) : hasError ? (
+      ) : status === 'error' ? (
         <div className="today-schedule-error">
           <div className="today-schedule-error__card">
             <p className="today-schedule-error__title">일정을 불러오지 못했습니다.</p>
@@ -201,7 +126,7 @@ export const TodayScheduleSection = () => {
             <TodayScheduleCard
               key={section.key}
               title={section.title}
-              entries={section.entries}
+              entries={section.items}
               emptyDescription={section.emptyDescription}
             />
           ))}

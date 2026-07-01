@@ -159,6 +159,12 @@ export const api = {
       characterName: String(characterName ?? '').trim(),
     });
   },
+  async updateMe(payload) {
+    return apiClient.put('/api/users/me', {
+      nickname: String(payload?.nickname ?? '').trim(),
+      bio: String(payload?.bio ?? '').trim(),
+    });
+  },
   async searchMarketItems(keyword) {
     const normalized = String(keyword ?? '').trim();
     if (useMock) {
@@ -175,11 +181,7 @@ export const api = {
   },
   async getMe() {
     if (!useMock) {
-      try {
-        return await apiClient.get('/api/auth/me');
-      } catch {
-        // fallback to mock data in local development
-      }
+      return apiClient.get('/api/auth/me');
     }
 
     return delay({

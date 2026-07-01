@@ -44,17 +44,18 @@ public class PostService {
         this.commentMapper = commentMapper;
     }
 
-    public ApiResponse<PageResponse<PostSummaryResponse>> getPosts(String boardSlug, long page, long size, String categoryCode, String sort) {
+    public ApiResponse<PageResponse<PostSummaryResponse>> getPosts(String boardSlug, long page, long size, String categoryCode, String sort, String keyword) {
         BoardRow board = resolveBoard(boardSlug);
         long normalizedPage = Math.max(page, 1);
         long normalizedSize = clampSize(size);
         long offset = (normalizedPage - 1) * normalizedSize;
         String normalizedCategory = normalizeCategory(categoryCode);
         String normalizedSort = normalizeSort(sort);
+        String normalizedKeyword = normalizeKeyword(keyword);
 
         try {
-            long total = postMapper.countPosts(board.id(), normalizedCategory);
-            List<PostSummaryResponse> items = postMapper.findPosts(board.id(), normalizedCategory, normalizedSort, offset, normalizedSize)
+            long total = postMapper.countPosts(board.id(), normalizedCategory, normalizedKeyword);
+            List<PostSummaryResponse> items = postMapper.findPosts(board.id(), normalizedCategory, normalizedSort, offset, normalizedSize, normalizedKeyword)
                 .stream()
                 .map(this::toSummaryResponse)
                 .toList();
@@ -275,6 +276,13 @@ public class PostService {
             case "comments" -> "COMMENTS";
             default -> "LATEST";
         };
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return keyword.trim();
     }
 
     private long clampSize(long size) {

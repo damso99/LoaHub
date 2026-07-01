@@ -22,6 +22,7 @@ export const CharacterSearchPage = () => {
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errorType, setErrorType] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   const runSearch = useCallback(
@@ -29,12 +30,15 @@ export const CharacterSearchPage = () => {
       const query = String(value ?? '').trim();
       if (!query) {
         setResults([]);
-        setErrorMessage('Please enter a character name.');
+        setErrorType('empty');
+        setErrorMessage('캐릭터 이름을 입력해 주세요.');
         return;
       }
 
       setLoading(true);
+      setErrorType('');
       setErrorMessage('');
+
       try {
         const nextResults = await searchCharactersLocal(query);
         const normalizedResults = Array.isArray(nextResults)
@@ -44,21 +48,23 @@ export const CharacterSearchPage = () => {
             : [];
         setResults(normalizedResults);
         if (normalizedResults.length === 0) {
-          setErrorMessage('Character not found.');
+          setErrorType('empty-result');
+          setErrorMessage('검색 결과가 없습니다.');
         }
       } catch (error) {
         const isTimeout =
           error?.code === 'ECONNABORTED' ||
           String(error?.message ?? '').toLowerCase().includes('timeout');
-        const message =
-          isTimeout
-            ? 'Search timed out. The server may still be starting up. Please try again in a moment.'
-            : error?.response?.data?.message ||
-          error?.response?.data?.detail ||
-          error?.message ||
-          'Character search failed.';
+        setErrorType(isTimeout ? 'timeout' : 'failure');
         setResults([]);
-        setErrorMessage(message);
+        setErrorMessage(
+          isTimeout
+            ? '검색 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.'
+            : error?.response?.data?.message ||
+              error?.response?.data?.detail ||
+              error?.message ||
+              '캐릭터 검색에 실패했습니다.',
+        );
       } finally {
         setLoading(false);
       }
@@ -93,35 +99,41 @@ export const CharacterSearchPage = () => {
 
   return (
     <div className="page-stack">
-      <PageHeader
-        title="Character Search"
-        description="Enter a character name to view Lost Ark Open API results."
-      />
+      <PageHeader title="캐릭터 검색" description="캐릭터 이름으로 로스트아크 서버 검색 결과를 확인합니다." />
 
       <Card className="search-card">
         <form className="search-form" onSubmit={handleSearch}>
           <Input
-            label="Character name"
-            placeholder="e.g. Damso"
+            label="캐릭터 이름"
+            placeholder="예: Damso"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />
-          <Button type="submit">{loading ? 'Searching...' : 'Search'}</Button>
+          <Button type="submit">{loading ? '검색 중...' : '검색'}</Button>
         </form>
       </Card>
 
       {loading ? (
         <Card className="loading-state">
-          <h2 className="loading-state__title">Loading character information.</h2>
-          <p className="loading-state__desc">Please wait while the search results load.</p>
+          <h2 className="loading-state__title">캐릭터 정보를 불러오는 중입니다.</h2>
+          <p className="loading-state__desc">잠시만 기다려 주세요.</p>
         </Card>
       ) : errorMessage ? (
-        <EmptyState title="Search failed" description={errorMessage} />
+        <EmptyState
+          title={
+            errorType === 'empty-result'
+              ? '검색 결과가 없습니다.'
+              : errorType === 'timeout'
+                ? '검색 시간이 초과되었습니다.'
+                : '검색 실패'
+          }
+          description={errorMessage}
+        />
       ) : filteredResults.length > 0 ? (
         <section className="grid grid-2">
           {filteredResults.map((character) => (
             <CharacterCard
-              key={character.characterName}
+              key={`${character.characterName}-${character.serverName}`}
               character={character}
               onSetMain={(nextCharacter) => {
                 if (!requireLogin()) {
@@ -129,12 +141,11 @@ export const CharacterSearchPage = () => {
                 }
                 void setMainCharacter(nextCharacter);
               }}
-              onTrack={() => undefined}
             />
           ))}
         </section>
       ) : (
-        <EmptyState title="No characters yet" description="Enter a character name and search." />
+        <EmptyState title="검색 결과 없음" description="캐릭터 이름을 입력하고 검색해 주세요." />
       )}
     </div>
   );

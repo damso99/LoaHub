@@ -4,26 +4,18 @@ import { api } from '../api/client';
 import { Card } from '../components/Card';
 import { useAuthGuard } from '../hooks/useAuthGuard';
 import { BoardHeader } from './board/BoardHeader';
-import { ImageUploadBox } from './board/ImageUploadBox';
 import { PostEditor } from './board/PostEditor';
-import { TagInput } from './board/TagInput';
 import { WriteActionBar } from './board/WriteActionBar';
-import {
-  getBoardSlugByType,
-  getBoardTitle,
-  mockBoards,
-  normalizeBoardPayload,
-  resolveBoardList,
-} from './board/boardUtils';
+import { getBoardSlugByType, getBoardTitle, normalizeBoardPayload, resolveBoardList } from './board/boardUtils';
 
-const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-const createPreviewItem = (file) => ({
-  id: makeId(),
-  file,
-  url: URL.createObjectURL(file),
-  name: file.name,
-  sizeLabel: `${Math.max(1, Math.round(file.size / 1024))}KB`,
+const createInitialForm = (boardSlug) => ({
+  boardType: boardSlug.startsWith('class/') ? 'CLASS' : 'FREE',
+  boardSlug,
+  categoryCode: '',
+  jobClass: '',
+  title: '',
+  content: '',
+  pinned: false,
 });
 
 const buildPostRequestBody = (form, selectedBoard) => {
@@ -39,17 +31,6 @@ const buildPostRequestBody = (form, selectedBoard) => {
   };
 };
 
-const createInitialForm = (boardSlug) => ({
-  boardType: boardSlug.startsWith('class/') ? 'CLASS' : 'FREE',
-  boardSlug,
-  categoryCode: '',
-  jobClass: '',
-  title: '',
-  content: '',
-  tags: [],
-  pinned: false,
-});
-
 export const PostWritePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -57,12 +38,10 @@ export const PostWritePage = () => {
   const postId = searchParams.get('postId');
   const { user, isAdmin } = useAuthGuard();
 
-  const [boards, setBoards] = useState(mockBoards);
+  const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
-  const [tagInput, setTagInput] = useState('');
-  const [imagePreviews, setImagePreviews] = useState([]);
   const [form, setForm] = useState(createInitialForm(boardParam));
 
   useEffect(() => {
@@ -72,16 +51,14 @@ export const PostWritePage = () => {
       try {
         setLoading(true);
         const response = await api.getBoards();
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const payload = normalizeBoardPayload(response);
-        const nextBoards = resolveBoardList(payload);
-        setBoards(nextBoards);
+        setBoards(resolveBoardList(payload));
       } catch (exception) {
         if (!cancelled) {
-          setBoards(mockBoards);
+          setBoards([]);
+          setErrors((current) => ({ ...current, form: exception?.message ?? '게시판 정보를 불러오지 못했습니다.' }));
         }
       } finally {
         if (!cancelled) {
@@ -98,12 +75,6 @@ export const PostWritePage = () => {
   }, []);
 
   useEffect(() => {
-    return () => {
-      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
-    };
-  }, [imagePreviews]);
-
-  useEffect(() => {
     if (!postId) {
       return;
     }
@@ -113,9 +84,7 @@ export const PostWritePage = () => {
     const run = async () => {
       try {
         const response = await api.getPost(postId);
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const payload = normalizeBoardPayload(response);
         const post = payload?.post ?? payload;
@@ -134,7 +103,7 @@ export const PostWritePage = () => {
           pinned: Boolean(post.pinned),
         }));
       } catch {
-        // 기존 게시글을 못 읽어도 작성 폼은 유지한다.
+        // 기존 글을 불러오지 못해도 작성 화면은 유지한다.
       }
     };
 
@@ -147,7 +116,7 @@ export const PostWritePage = () => {
 
   const selectedBoard = useMemo(() => {
     if (!boards.length) {
-      return mockBoards[0];
+      return null;
     }
 
     return (
@@ -206,47 +175,6 @@ export const PostWritePage = () => {
     }));
   };
 
-  const handleImageSelect = (event) => {
-    const files = Array.from(event.target.files ?? []);
-    if (!files.length) {
-      return;
-    }
-
-    setImagePreviews((current) => [...current, ...files.map(createPreviewItem)]);
-    event.target.value = '';
-  };
-
-  const handleImageRemove = (id) => {
-    setImagePreviews((current) => {
-      const target = current.find((item) => item.id === id);
-      if (target) {
-        URL.revokeObjectURL(target.url);
-      }
-
-      return current.filter((item) => item.id !== id);
-    });
-  };
-
-  const addTag = () => {
-    const nextTag = tagInput.trim().replace(/^#/, '');
-    if (!nextTag) {
-      return;
-    }
-
-    setForm((current) => ({
-      ...current,
-      tags: Array.from(new Set([...current.tags, nextTag])),
-    }));
-    setTagInput('');
-  };
-
-  const removeTag = (tag) => {
-    setForm((current) => ({
-      ...current,
-      tags: current.tags.filter((item) => item !== tag),
-    }));
-  };
-
   const validate = () => {
     const nextErrors = {};
 
@@ -254,7 +182,7 @@ export const PostWritePage = () => {
       nextErrors.title = '제목을 입력해 주세요.';
     }
     if (!form.content.trim()) {
-      nextErrors.content = '본문을 입력해 주세요.';
+      nextErrors.content = '내용을 입력해 주세요.';
     }
     if (!form.categoryCode) {
       nextErrors.categoryCode = '카테고리를 선택해 주세요.';
@@ -299,7 +227,7 @@ export const PostWritePage = () => {
     <div className="page-stack write-page write-shell">
       <BoardHeader
         title={postId ? '게시글 수정' : '게시글 작성'}
-        description="LoaHub 톤을 유지한 다크 네이비 작성 화면입니다."
+        description="LoaHub 게시판에 실제로 저장되는 글을 작성합니다."
         meta={`${user?.nickname ?? '익명'} · ${boardTitle}`}
       />
 
@@ -364,7 +292,7 @@ export const PostWritePage = () => {
                 className={`board-input ${errors.title ? 'board-input--error' : ''}`.trim()}
                 value={form.title}
                 onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                placeholder="글의 핵심이 보이도록 제목을 입력해 주세요."
+                placeholder="게시글 제목을 입력해 주세요."
                 maxLength={120}
               />
               {errors.title ? <p className="write-field-error">{errors.title}</p> : null}
@@ -373,37 +301,13 @@ export const PostWritePage = () => {
 
           <section className="write-editor-card">
             <div className="write-field__label write-field__label--block">
-              <span>
-                본문 입력 <em>*</em>
-              </span>
-              <span className="write-field__hint">기본 textarea 기반 에디터 UI입니다.</span>
+              <span>본문 입력 <em>*</em></span>
+              <span className="write-field__hint">작성한 내용은 서버에 저장됩니다.</span>
             </div>
             <PostEditor
               value={form.content}
               onChange={(value) => setForm((current) => ({ ...current, content: value }))}
               error={errors.content}
-            />
-          </section>
-
-          <section className="write-upload-section">
-            <div className="write-field__label write-field__label--block">
-              <span>이미지 첨부</span>
-              <span className="write-field__hint">드래그 앤 드롭 또는 클릭으로 이미지를 첨부할 수 있습니다.</span>
-            </div>
-            <ImageUploadBox previews={imagePreviews} onSelect={handleImageSelect} onRemove={handleImageRemove} />
-          </section>
-
-          <section className="write-tag-section">
-            <div className="write-field__label write-field__label--block">
-              <span>태그</span>
-              <span className="write-field__hint">쉼표 대신 태그 칩으로 정리합니다.</span>
-            </div>
-            <TagInput
-              value={form.tags}
-              inputValue={tagInput}
-              onInputChange={setTagInput}
-              onAddTag={addTag}
-              onRemoveTag={removeTag}
             />
           </section>
 
@@ -420,7 +324,7 @@ export const PostWritePage = () => {
 
           {errors.form ? <p className="write-field-error write-field-error--form">{errors.form}</p> : null}
 
-          <WriteActionBar onCancel={() => navigate(-1)} loading={saving || loading} />
+          <WriteActionBar onCancel={() => navigate(-1)} loading={saving || loading || !boards.length} />
         </form>
       </Card>
     </div>

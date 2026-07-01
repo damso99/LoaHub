@@ -2,24 +2,28 @@ import { Client } from '@stomp/stompjs';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import SockJS from 'sockjs-client';
 import { api } from '../api/client';
-import {
-  charactersSeed,
-  currentUserSeed,
-  postsSeed,
-  profileSeed,
-  todayHighlights,
-} from '../data/mockData';
+import { currentUserSeed } from '../data/mockData';
 import { readStorage, writeStorage } from '../utils/storage';
 
 const AppStateContext = createContext(null);
-
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 const normalizeRole = (role) => {
-  if (!role) {
-    return '';
-  }
+  if (!role) return '';
   return role.startsWith('ROLE_') ? role : `ROLE_${role}`;
+};
+
+const emptyProfile = {
+  id: null,
+  userId: null,
+  mainCharacterName: '',
+  serverName: '',
+  characterClass: '',
+  itemLevel: '',
+  characterImage: '',
+  bio: '',
+  createdAt: '',
+  updatedAt: '',
 };
 
 const resolveAuthPayload = (input) => {
@@ -38,23 +42,21 @@ const resolveAuthPayload = (input) => {
   };
 };
 
-const readNotifications = () =>
-  readStorage('notifications', [
-    { id: 1, contentName: '카오스게이트', enabled: true, notifyBeforeMinutes: 30 },
-    { id: 2, contentName: '어비스', enabled: false, notifyBeforeMinutes: 15 },
-  ]);
+const readNotifications = () => readStorage('notifications', []);
 
 export const AppStateProvider = ({ children }) => {
   const [token, setToken] = useState(() => readStorage('authToken', null));
   const [user, setUser] = useState(() => readStorage('user', null));
-  const [profile, setProfile] = useState(() => readStorage('profile', profileSeed));
-  const [characters, setCharacters] = useState(() => readStorage('characters', charactersSeed));
-  const [posts, setPosts] = useState(() => readStorage('posts', postsSeed));
-  const [highlights] = useState(todayHighlights);
+  const [profile, setProfile] = useState(() => readStorage('profile', emptyProfile));
+  const [characters, setCharacters] = useState(() => readStorage('characters', []));
+  const [posts, setPosts] = useState(() => readStorage('posts', []));
   const [notifications, setNotifications] = useState(() => readNotifications());
   const [messageUnreadCount, setMessageUnreadCount] = useState(0);
   const [messageToasts, setMessageToasts] = useState([]);
+  const [activeMessageThreadId, setActiveMessageThreadId] = useState(null);
+  const [messageRefreshVersion, setMessageRefreshVersion] = useState(0);
   const socketRef = useRef(null);
+  const toastKeysRef = useRef(new Set());
 
   useEffect(() => {
     writeStorage('authToken', token);
@@ -80,6 +82,27 @@ export const AppStateProvider = ({ children }) => {
     writeStorage('notifications', notifications);
   }, [notifications]);
 
+  const resetMessageRealtimeState = () => {
+    setMessageUnreadCount(0);
+    setMessageToasts([]);
+    setActiveMessageThreadId(null);
+    setMessageRefreshVersion(0);
+    toastKeysRef.current.clear();
+  };
+
+  const handleAuthFailure = () => {
+    if (socketRef.current) {
+      socketRef.current.deactivate();
+      socketRef.current = null;
+    }
+    resetMessageRealtimeState();
+    setToken(null);
+    setUser(null);
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login');
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -91,15 +114,17 @@ export const AppStateProvider = ({ children }) => {
 
       try {
         const response = await api.getUnreadMessageCount();
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const payload = response?.data?.data ?? response?.data ?? {};
         setMessageUnreadCount(Number(payload.unreadCount ?? 0));
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          setMessageUnreadCount(0);
+          if (error?.response?.status === 401 || error?.response?.status === 403) {
+            handleAuthFailure();
+          } else {
+            setMessageUnreadCount(0);
+          }
         }
       }
     };
@@ -117,16 +142,14 @@ export const AppStateProvider = ({ children }) => {
         socketRef.current.deactivate();
         socketRef.current = null;
       }
-      setMessageToasts([]);
+      resetMessageRealtimeState();
       return undefined;
     }
 
     const socketUrl = `${apiBaseUrl.replace(/^http/, 'ws')}/ws`;
     const client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
+      connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
@@ -134,24 +157,47 @@ export const AppStateProvider = ({ children }) => {
     });
 
     client.onConnect = () => {
-      client.subscribe('/user/queue/messages', () => {
-        // 메시지 목록 화면이 직접 갱신하므로 별도 처리하지 않는다.
+      client.subscribe('/user/queue/messages', (frame) => {
+        try {
+          const payload = JSON.parse(frame.body);
+          if (payload?.threadId) {
+            setMessageRefreshVersion((current) => current + 1);
+          }
+        } catch {
+          setMessageRefreshVersion((current) => current + 1);
+        }
       });
 
       client.subscribe('/user/queue/notifications', (frame) => {
         try {
           const payload = JSON.parse(frame.body);
-          const toast = {
-            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            threadId: payload.threadId,
-            senderNickname: payload.senderNickname,
-            preview: payload.preview,
-            createdAt: payload.createdAt,
-          };
-          setMessageToasts((current) => [toast, ...current].slice(0, 3));
           if (typeof payload.unreadCount === 'number') {
             setMessageUnreadCount(payload.unreadCount);
           }
+
+          if (String(payload.threadId ?? '') === String(activeMessageThreadId ?? '')) {
+            setMessageRefreshVersion((current) => current + 1);
+            return;
+          }
+
+          const toastKey = `${payload.threadId}:${payload.messageId ?? payload.createdAt ?? ''}`;
+          if (toastKeysRef.current.has(toastKey)) {
+            return;
+          }
+
+          toastKeysRef.current.add(toastKey);
+          setMessageToasts((current) =>
+            [
+              {
+                id: toastKey,
+                threadId: payload.threadId,
+                senderNickname: payload.senderNickname,
+                preview: payload.preview,
+                createdAt: payload.createdAt,
+              },
+              ...current,
+            ].slice(0, 3),
+          );
         } catch {
           // ignore malformed payloads
         }
@@ -167,6 +213,16 @@ export const AppStateProvider = ({ children }) => {
       });
     };
 
+    client.onStompError = () => {
+      handleAuthFailure();
+    };
+
+    client.onWebSocketClose = () => {
+      if (token && user) {
+        handleAuthFailure();
+      }
+    };
+
     client.activate();
     socketRef.current = client;
 
@@ -176,29 +232,21 @@ export const AppStateProvider = ({ children }) => {
         socketRef.current = null;
       }
     };
-  }, [token, user]);
+  }, [activeMessageThreadId, token, user]);
 
   useEffect(() => {
     let cancelled = false;
 
     const syncCurrentUser = async () => {
-      if (!token || user) {
-        return;
-      }
+      if (!token || user) return;
 
       try {
         const response = await api.getMe();
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const payload = response?.data?.data ?? response?.data ?? {};
-        if (payload.user) {
-          setUser(payload.user);
-        }
-        if (payload.profile) {
-          setProfile(payload.profile);
-        }
+        if (payload.user) setUser(payload.user);
+        if (payload.profile) setProfile(payload.profile);
       } catch {
         if (!cancelled) {
           setToken(null);
@@ -223,10 +271,11 @@ export const AppStateProvider = ({ children }) => {
       profile,
       characters,
       posts,
-      highlights,
       notifications,
       messageUnreadCount,
       messageToasts,
+      activeMessageThreadId,
+      messageRefreshVersion,
       isAuthenticated: Boolean(token && user),
       isAdmin: currentRole === 'ROLE_ADMIN',
       setToken,
@@ -237,24 +286,24 @@ export const AppStateProvider = ({ children }) => {
       setNotifications,
       setMessageUnreadCount,
       setMessageToasts,
+      setActiveMessageThreadId,
       login: (input) => {
         const next = resolveAuthPayload(input);
-        if (next.token) {
-          setToken(next.token);
-        }
-        if (next.user) {
-          setUser(next.user);
-        }
-        if (next.profile) {
-          setProfile(next.profile);
-        }
+        if (next.token) setToken(next.token);
+        if (next.user) setUser(next.user);
+        if (next.profile) setProfile(next.profile);
       },
       logout: () => {
         setToken(null);
         setUser(null);
-        setProfile(profileSeed);
+        setProfile(emptyProfile);
+        setCharacters([]);
+        setPosts([]);
         setMessageUnreadCount(0);
         setMessageToasts([]);
+        setActiveMessageThreadId(null);
+        setMessageRefreshVersion(0);
+        toastKeysRef.current.clear();
       },
       setMainCharacter: async (character) => {
         setProfile((current) => ({
@@ -284,7 +333,7 @@ export const AppStateProvider = ({ children }) => {
             }));
           }
         } catch (error) {
-          console.error('대표 캐릭터 설정에 실패했습니다.', error);
+          console.error('대표 캐릭터 설정 실패', error);
         }
       },
       toggleNotification: (notificationId) => {
@@ -313,7 +362,7 @@ export const AppStateProvider = ({ children }) => {
           likeCount: 0,
           commentCount: 0,
           author: user?.nickname ?? currentUserSeed?.nickname ?? 'LoaHub',
-          className: payload.className ?? '자유',
+          className: payload.className ?? '기타',
           createdAt: new Date().toISOString().slice(0, 10),
           updatedAt: new Date().toISOString().slice(0, 10),
           deletedYn: false,
@@ -327,9 +376,7 @@ export const AppStateProvider = ({ children }) => {
         let updatedPost = null;
         setPosts((current) =>
           current.map((item) => {
-            if (item.id !== postId) {
-              return item;
-            }
+            if (item.id !== postId) return item;
 
             updatedPost = {
               ...item,
@@ -373,7 +420,18 @@ export const AppStateProvider = ({ children }) => {
         return response.data?.data ?? response.data;
       },
     };
-  }, [characters, highlights, messageToasts, messageUnreadCount, notifications, posts, profile, token, user]);
+  }, [
+    activeMessageThreadId,
+    characters,
+    messageRefreshVersion,
+    messageToasts,
+    messageUnreadCount,
+    notifications,
+    posts,
+    profile,
+    token,
+    user,
+  ]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 };

@@ -32,7 +32,7 @@ const formatTime = (value) => {
 export const MessageDetailPage = () => {
   const navigate = useNavigate();
   const { threadId } = useParams();
-  const { setMessageUnreadCount } = useAppState();
+  const { setMessageUnreadCount, messageRefreshVersion, setActiveMessageThreadId } = useAppState();
   const [threads, setThreads] = useState([]);
   const [messages, setMessages] = useState([]);
   const [reply, setReply] = useState('');
@@ -41,6 +41,13 @@ export const MessageDetailPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const thread = useMemo(() => threads.find((item) => String(item.threadId) === String(threadId)), [threads, threadId]);
+
+  useEffect(() => {
+    setActiveMessageThreadId(threadId ? String(threadId) : null);
+    return () => {
+      setActiveMessageThreadId(null);
+    };
+  }, [setActiveMessageThreadId, threadId]);
 
   const loadThread = async () => {
     if (!threadId) {
@@ -83,7 +90,7 @@ export const MessageDetailPage = () => {
 
   useEffect(() => {
     void loadThread();
-  }, [threadId]);
+  }, [threadId, messageRefreshVersion]);
 
   const handleSend = async (event) => {
     event.preventDefault();
@@ -164,6 +171,9 @@ export const MessageDetailPage = () => {
                 <div className="message-bubble__meta">
                   <strong>{message.mine ? '나' : message.senderNickname}</strong>
                   <span>{formatTime(message.createdAt)}</span>
+                  {message.mine ? (
+                    <span className="message-bubble__read-state">{message.readYn ? '읽음' : '안읽음'}</span>
+                  ) : null}
                 </div>
                 <p>{message.content}</p>
               </article>
