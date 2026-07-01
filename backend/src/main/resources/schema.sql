@@ -183,9 +183,3 @@ VALUES
   (2, 1, 1, 'BlueShield', '공지 내용이 보기 좋아서 저장해 둡니다.', 'ACTIVE'),
   (3, 2, 1, 'HolySong', '파티 조건이 잘 맞으면 참여하고 싶습니다.', 'ACTIVE')
 ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO post_likes (id, post_id, user_id)
-VALUES
-  (1, 1, 1),
-  (2, 4, 1)
-ON CONFLICT (id) DO NOTHING;
