@@ -2,46 +2,21 @@ import { Link } from 'react-router-dom';
 import { useAppState } from '../context/AppStateContext';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
-import { CalendarCard } from '../components/CalendarCard';
 import { Card } from '../components/Card';
 import { PageHeader } from '../components/PageHeader';
+import { TodayScheduleSection } from '../components/TodayScheduleSection';
 
 export const HomePage = () => {
-  const { highlights, posts } = useAppState();
-  const popularPosts = [...posts]
-    .sort((a, b) => b.likeCount - a.likeCount)
-    .slice(0, 4);
-  const calendarItems = highlights.slice(0, 3);
+  const { posts } = useAppState();
+  const popularPosts = [...posts].sort((a, b) => b.likeCount - a.likeCount).slice(0, 4);
 
   return (
-    <div className="page-stack">
-      <section className="hero-panel hero-panel--compact">
-        <div className="hero-copy">
-          <p className="eyebrow">LoaHub Community</p>
-          <h1>로스트아크 커뮤니티 허브</h1>
-          <p>게시판, 캘린더, 쪽지까지 이어지는 게임 커뮤니티 흐름을 한 화면에서 확인할 수 있습니다.</p>
-        </div>
-      </section>
-
-      <PageHeader
-        title="오늘의 캘린더"
-        description="로아 주요 콘텐츠의 상태를 빠르게 확인하세요."
-        action={
-          <Button as={Link} to="/calendar" variant="secondary">
-            캘린더 전체보기
-          </Button>
-        }
-      />
-
-      <section className="grid grid-3">
-        {calendarItems.map((content) => (
-          <CalendarCard key={content.id} content={content} enabled={false} onToggle={() => undefined} />
-        ))}
-      </section>
+    <div className="page-stack home-page">
+      <TodayScheduleSection />
 
       <PageHeader
         title="인기 게시물"
-        description="좋아요가 많은 게시물을 먼저 확인할 수 있습니다."
+        description="로아허브에서 지금 가장 반응이 많은 게시물을 한눈에 확인하세요."
         action={
           <Button as={Link} to="/boards/free" variant="ghost">
             게시판으로 이동
@@ -72,12 +47,14 @@ export const HomePage = () => {
       <Card className="section-card home-footer-card">
         <div>
           <h2>LoaHub 둘러보기</h2>
-          <p>게시판과 캘린더, 쪽지함까지 이어지는 게임 커뮤니티의 기본 흐름을 보여줍니다.</p>
+          <p>게시판과 캘린더, 쪽지까지 이어지는 게임 커뮤니티의 기본 흐름을 한곳에 모았습니다.</p>
         </div>
         <div className="hero-actions">
-          <Button as={Link} to="/boards/free">게시판 보기</Button>
+          <Button as={Link} to="/boards/free">
+            게시판 보기
+          </Button>
           <Button as={Link} to="/messages" variant="secondary">
-            쪽지함
+            쪽지 확인
           </Button>
         </div>
       </Card>
